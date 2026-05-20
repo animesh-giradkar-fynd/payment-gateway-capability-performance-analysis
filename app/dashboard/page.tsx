@@ -5,6 +5,8 @@ import { authOptions } from '@/lib/auth';
 import { MetricCards } from '@/components/panels/MetricCards';
 import { GatewayMix } from '@/components/panels/GatewayMix';
 import { MopMix } from '@/components/panels/MopMix';
+import { FailuresPanel } from '@/components/panels/FailuresPanel';
+import { RefundsPanel } from '@/components/panels/RefundsPanel';
 import { FilterBar } from '@/components/filters/FilterBar';
 import { SignOutButton } from '@/components/SignInButton';
 
@@ -46,15 +48,18 @@ export default async function Dashboard() {
         <MopMix />
       </section>
 
+      <section className="panel-grid-2">
+        <FailuresPanel />
+        <RefundsPanel />
+      </section>
+
       <section className="upcoming">
-        <h2>Coming next (M3 / M4)</h2>
+        <h2>Coming next (M4)</h2>
         <ul>
-          <li>Failure reasons drill-down with independent picker</li>
-          <li>Refund posture panel</li>
-          <li>India regional heatmap</li>
+          <li>India regional heatmap (state-level)</li>
           <li>Capability matrix + Fynd Orchestration panel</li>
           <li>Storefront, FC Seller, and Ordering Channel filters</li>
-          <li>Novus design system integration (currently styled with placeholder tokens)</li>
+          <li>Novus design system swap (currently using placeholder tokens)</li>
         </ul>
       </section>
     </main>

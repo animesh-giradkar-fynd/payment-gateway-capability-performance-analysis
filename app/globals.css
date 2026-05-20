@@ -253,10 +253,145 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--nov-spacing-4);
-  margin-bottom: var(--nov-spacing-8);
+  margin-bottom: var(--nov-spacing-4);
 }
 @media (max-width: 900px) {
   .panel-grid-2 { grid-template-columns: 1fr; }
+}
+
+/* === Failures panel === */
+.failures-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: var(--nov-spacing-3);
+  padding-bottom: var(--nov-spacing-3);
+  border-bottom: 1px solid var(--nov-color-border-neutral-4);
+  font-size: 12px;
+}
+.picker-select {
+  border: 1px solid var(--nov-color-border-neutral-6);
+  border-radius: var(--nov-radius-xs);
+  padding: 3px 6px;
+  font-size: 12px;
+  font-family: inherit;
+  background: var(--nov-color-bg-surface);
+}
+.picker-select:disabled { opacity: 0.5; cursor: wait; }
+
+.failures-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 360px;
+  overflow-y: auto;
+}
+.failures-row {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  gap: var(--nov-spacing-3);
+  align-items: center;
+  padding: var(--nov-spacing-2) 0;
+  border-bottom: 1px solid var(--nov-color-border-neutral-4);
+}
+.failures-row:last-child { border-bottom: none; }
+.failures-rank {
+  font-size: 11px;
+  color: var(--nov-color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.failures-body { min-width: 0; }
+.failures-reason {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--nov-color-text-primary);
+  word-break: break-word;
+}
+.failures-desc {
+  font-size: 11px;
+  color: var(--nov-color-text-secondary);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.failures-counts { text-align: right; min-width: 70px; }
+.failures-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--nov-color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.failures-share {
+  font-size: 11px;
+  color: var(--nov-color-text-secondary);
+}
+
+/* === Refunds panel === */
+.refunds-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--nov-spacing-4);
+}
+.refunds-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--nov-spacing-3);
+}
+.refunds-kpi {
+  background: rgba(0,0,0,0.025);
+  border-radius: var(--nov-radius-md);
+  padding: var(--nov-spacing-3);
+}
+.refunds-kpi-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--nov-color-text-secondary);
+  margin-bottom: 4px;
+}
+.refunds-kpi-value {
+  font-size: 20px;
+  font-weight: 600;
+}
+.refunds-section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--nov-color-text-secondary);
+  margin-bottom: var(--nov-spacing-2);
+}
+.refunds-failure-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.refunds-failure-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 12px;
+  border-bottom: 1px solid var(--nov-color-border-neutral-4);
+}
+.refunds-failure-row:last-child { border-bottom: none; }
+.refunds-failure-reason {
+  flex: 1;
+  margin-right: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.refunds-failure-count {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.refunds-note {
+  font-size: 11px;
+  padding-top: var(--nov-spacing-2);
+  border-top: 1px dashed var(--nov-color-border-neutral-4);
 }
 
 .metric-row {

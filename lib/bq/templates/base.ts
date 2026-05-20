@@ -10,6 +10,14 @@ export type BQQuery = {
   types: Record<string, string | string[]>;
 };
 
+export type SliceOptions = {
+  /**
+   * If true, includes ONLY transactions where transaction_type = 'REFUND' (refund query family
+   * per architecture.md / D007). If false / undefined, EXCLUDES refunds (telemetry query family).
+   */
+  refundOnly?: boolean;
+};
+
 /**
  * Reusable CTE that produces the base `slice` row set every telemetry panel queries against.
  * Encodes the V2 query shape (D007) translated to Zenith (D006):
@@ -18,12 +26,21 @@ export type BQQuery = {
  *                 → merchant_profile → merchant
  *   - Date-range constraint on both transaction.created_on and transaction_status.created_on
  *   - is_active = TRUE on transaction
- *   - Standard exclusions: test brands, Openapi, PAYMENTLINK, REFUND
- *   - Optional filters: aggregatorIds, paymentModes — applied conditionally
+ *   - Standard exclusions: test brands, Openapi, PAYMENTLINK
+ *   - transaction_type filter: telemetry queries exclude REFUND; refund queries require REFUND
+ *   - Optional filters: aggregatorIds, paymentModes, merchantProfileIds — applied conditionally
+ *
+ * Projects `transaction.meta` JSON extracts (error_code / error_reason / error_description)
+ * per V2 query. If `transaction.meta` doesn't exist in Zenith at runtime, the query fails at
+ * parse time — drop the three JSON_VALUE lines below and the failures panel falls back to
+ * mapper-only reasons.
  *
  * The caller composes its own SELECT / GROUP BY on top of the `slice` CTE.
  */
-export function buildSliceCTE(filters: DashboardFilters): {
+export function buildSliceCTE(
+  filters: DashboardFilters,
+  options: SliceOptions = {},
+): {
   sql: string;
   params: Record<string, unknown>;
   types: Record<string, string | string[]>;
@@ -59,6 +76,9 @@ export function buildSliceCTE(filters: DashboardFilters): {
   }
 
   const extraClause = extraPredicates.length ? `AND ${extraPredicates.join(' AND ')}` : '';
+  const refundClause = options.refundOnly
+    ? `AND IFNULL(transaction_type, '') = 'REFUND'`
+    : `AND IFNULL(transaction_type, '') <> 'REFUND'`;
 
   const sql = `
     WITH latest_status AS (
@@ -73,15 +93,21 @@ export function buildSliceCTE(filters: DashboardFilters): {
       SELECT
         t.id AS transaction_id,
         t.amount,
+        t.refunded_amount,
         t.created_on,
         t.aggregator_id,
         t.payment_mode,
         t.payment_mode_identifier,
         t.transaction_type,
         t.merchant_profile_id,
+        t.meta AS txn_meta,
         agg_map.status AS unified_status,
+        agg_map.aggregator_status AS raw_aggregator_status,
         m.name AS brand_name,
-        agg.name AS aggregator_name
+        agg.name AS aggregator_name,
+        JSON_VALUE(t.meta, '$.error_code') AS error_code,
+        JSON_VALUE(t.meta, '$.error_reason') AS error_reason,
+        JSON_VALUE(t.meta, '$.error_description') AS error_description
       FROM ${Z}.transaction t
       LEFT JOIN latest_status ls
         ON ls.transaction_id = t.id AND ls.rn = 1
@@ -103,7 +129,7 @@ export function buildSliceCTE(filters: DashboardFilters): {
       WHERE LOWER(IFNULL(brand_name, '')) NOT LIKE '%test%'
         AND IFNULL(aggregator_name, '') <> 'Openapi'
         AND IFNULL(payment_mode, '') <> 'PAYMENTLINK'
-        AND IFNULL(transaction_type, '') <> 'REFUND'
+        ${refundClause}
     )
   `;
 
