@@ -1,7 +1,8 @@
 'use client';
-import { useEffect, useState } from 'react';
+import useSWR from 'swr';
 import { Panel } from '@/components/ui/Panel';
-import { lastNDays } from '@/lib/filters';
+import { useFilterStore } from '@/lib/store/filters';
+import type { DashboardFilters } from '@/lib/filters';
 
 type MetricsRow = {
   transaction_volume: number;
@@ -17,60 +18,50 @@ const fmtMoney = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 });
 const fmtPct = (n: number | null) => (n == null ? '—' : `${n.toFixed(1)}%`);
 const fmtRupees = (n: number | null) => (n == null ? '—' : `₹${fmtMoney.format(n)}`);
 
+async function postFetcher([url, body]: [string, DashboardFilters]) {
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const json = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(json.message ?? `HTTP ${r.status}`);
+  return json;
+}
+
 export function MetricCards() {
-  const [data, setData] = useState<MetricsRow | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const filters = useFilterStore((s) => s.filters);
+  const { data: response, error, isLoading } = useSWR<{ data: MetricsRow | null }>(
+    ['/api/metrics', filters],
+    postFetcher,
+    { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
+  );
 
-  useEffect(() => {
-    const ac = new AbortController();
-    setLoading(true);
-    setError(null);
-
-    fetch('/api/metrics', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dateRange: lastNDays(30) }),
-      signal: ac.signal,
-    })
-      .then(async (r) => {
-        const json = await r.json().catch(() => ({}));
-        if (!r.ok) {
-          throw new Error(json.message ?? `HTTP ${r.status}`);
-        }
-        return json;
-      })
-      .then((j) => setData(j.data))
-      .catch((e) => {
-        if (e.name !== 'AbortError') setError(String(e.message ?? e));
-      })
-      .finally(() => setLoading(false));
-
-    return () => ac.abort();
-  }, []);
+  const data = response?.data ?? null;
+  const errMsg = error ? String((error as Error).message ?? error) : null;
 
   return (
     <div className="metric-cards">
-      <Panel title="Transactions" loading={loading} error={error}>
+      <Panel title="Transactions" loading={isLoading} error={errMsg}>
         <div className="metric-value">{data ? fmtInt.format(data.transaction_volume) : '—'}</div>
-        <div className="metric-sub">Last 30 days</div>
+        <div className="metric-sub">In the current slice</div>
       </Panel>
 
-      <Panel title="Success rate" loading={loading} error={error}>
+      <Panel title="Success rate" loading={isLoading} error={errMsg}>
         <div className="metric-value">{fmtPct(data?.success_rate_pct ?? null)}</div>
         <div className="metric-sub">
           {data ? `${fmtInt.format(data.successful_count)} successful` : '—'}
         </div>
       </Panel>
 
-      <Panel title="Failure rate" loading={loading} error={error}>
+      <Panel title="Failure rate" loading={isLoading} error={errMsg}>
         <div className="metric-value">{fmtPct(data?.failure_rate_pct ?? null)}</div>
         <div className="metric-sub">
           {data ? `${fmtInt.format(data.failed_count)} failed` : '—'}
         </div>
       </Panel>
 
-      <Panel title="Avg ticket" loading={loading} error={error}>
+      <Panel title="Avg ticket" loading={isLoading} error={errMsg}>
         <div className="metric-value">{fmtRupees(data?.avg_ticket_size ?? null)}</div>
         <div className="metric-sub">Successful txns only · INR slice</div>
       </Panel>

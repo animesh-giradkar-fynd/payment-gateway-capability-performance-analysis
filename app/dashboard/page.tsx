@@ -1,7 +1,11 @@
+import { Suspense } from 'react';
 import { getServerSession } from 'next-auth/next';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
 import { MetricCards } from '@/components/panels/MetricCards';
+import { GatewayMix } from '@/components/panels/GatewayMix';
+import { MopMix } from '@/components/panels/MopMix';
+import { FilterBar } from '@/components/filters/FilterBar';
 import { SignOutButton } from '@/components/SignInButton';
 
 export const dynamic = 'force-dynamic';
@@ -25,24 +29,32 @@ export default async function Dashboard() {
         </div>
       </header>
 
-      <section className="filter-bar-placeholder">
-        <span>Filters: Last 30 days · India · all PGs · all MOPs</span>
-        <span className="muted">Interactive filter bar lands in M2.</span>
-      </section>
+      {/*
+        Suspense boundary is required because FilterBar uses useSearchParams (Next.js 14 rule
+        for client components that read params in the App Router).
+      */}
+      <Suspense fallback={<div className="filter-bar-skeleton">Loading filters…</div>}>
+        <FilterBar />
+      </Suspense>
 
       <section className="metric-row">
         <MetricCards />
       </section>
 
+      <section className="panel-grid-2">
+        <GatewayMix />
+        <MopMix />
+      </section>
+
       <section className="upcoming">
-        <h2>Coming next (M2 / M3 / M4)</h2>
+        <h2>Coming next (M3 / M4)</h2>
         <ul>
-          <li>Interactive filter bar (date, PG, MOP, storefront, ordering channel)</li>
-          <li>Gateway mix + MOP mix panels (Recharts)</li>
           <li>Failure reasons drill-down with independent picker</li>
           <li>Refund posture panel</li>
           <li>India regional heatmap</li>
           <li>Capability matrix + Fynd Orchestration panel</li>
+          <li>Storefront, FC Seller, and Ordering Channel filters</li>
+          <li>Novus design system integration (currently styled with placeholder tokens)</li>
         </ul>
       </section>
     </main>
