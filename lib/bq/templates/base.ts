@@ -119,16 +119,17 @@ export function buildSliceCTE(
         t.payment_mode_identifier,
         t.transaction_type,
         t.merchant_profile_id,
-        t.meta AS txn_meta,
         agg_map.status AS unified_status,
         agg_map.aggregator_status AS raw_aggregator_status,
         m.id AS seller_id,
         m.name AS brand_name,
         mp.name AS profile_name,
         agg.name AS aggregator_name,
-        JSON_VALUE(t.meta, '$.error_code') AS error_code,
-        JSON_VALUE(t.meta, '$.error_reason') AS error_reason,
-        JSON_VALUE(t.meta, '$.error_description') AS error_description
+        -- dbe_transaction has no `meta` column in Zenith (Boltic transformation dropped it).
+        -- Failures panel falls back to raw_aggregator_status only — no JSON error details.
+        CAST(NULL AS STRING) AS error_code,
+        CAST(NULL AS STRING) AS error_reason,
+        CAST(NULL AS STRING) AS error_description
       FROM ${Z}.dbe_transaction t
       LEFT JOIN latest_status ls
         ON ls.transaction_id = t.id AND ls.rn = 1
