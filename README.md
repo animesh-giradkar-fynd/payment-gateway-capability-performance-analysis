@@ -18,8 +18,6 @@ gcloud config set project fynd-jio-commerceml-prod
 pnpm dev
 ```
 
-Visit http://localhost:3000 and sign in with your @gofynd.com account.
-
 ## What it does
 
 A single-page dashboard for ~5–10 internal stakeholders (CPO, Payments leadership, BD, PM) that answers:
