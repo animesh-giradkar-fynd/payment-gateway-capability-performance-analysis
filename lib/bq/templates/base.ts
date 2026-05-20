@@ -74,6 +74,25 @@ export function buildSliceCTE(
     params.merchantProfileIds = filters.merchantProfileIds;
     types.merchantProfileIds = ['INT64'];
   }
+  if (filters.sellerIds?.length) {
+    // FC Seller filter — sellerIds are merchant.id (the brand), so we filter via the
+    // merchant_profile → merchant join chain. mp.merchant_id is the FK on merchant_profile.
+    extraPredicates.push('mp.merchant_id IN UNNEST(@sellerIds)');
+    params.sellerIds = filters.sellerIds;
+    types.sellerIds = ['INT64'];
+  }
+
+  // Ordering Channel requires a join to avis-side `orders` table — only emit when filter is set
+  // (the join is a small additional scan cost we don't want to pay on every query otherwise).
+  const joinOrders = !!filters.orderingChannel?.length;
+  const ordersJoinSql = joinOrders
+    ? `LEFT JOIN ${Z}.orders zo ON zo.order_id = t.merchant_order_id`
+    : '';
+  if (joinOrders && filters.orderingChannel) {
+    extraPredicates.push('zo.ordering_source IN UNNEST(@orderingChannel)');
+    params.orderingChannel = filters.orderingChannel;
+    types.orderingChannel = ['STRING'];
+  }
 
   const extraClause = extraPredicates.length ? `AND ${extraPredicates.join(' AND ')}` : '';
   const refundClause = options.refundOnly
@@ -119,6 +138,7 @@ export function buildSliceCTE(
         ON mp.id = t.merchant_profile_id
       LEFT JOIN ${Z}.merchant m
         ON m.id = mp.merchant_id
+      ${ordersJoinSql}
       WHERE DATE(t.created_on) BETWEEN @from AND @to
         AND t.is_active = TRUE
         ${extraClause}

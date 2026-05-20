@@ -7,6 +7,8 @@ import { GatewayMix } from '@/components/panels/GatewayMix';
 import { MopMix } from '@/components/panels/MopMix';
 import { FailuresPanel } from '@/components/panels/FailuresPanel';
 import { RefundsPanel } from '@/components/panels/RefundsPanel';
+import { CapabilityMatrix } from '@/components/matrix/CapabilityMatrix';
+import { OrchestrationPanel } from '@/components/matrix/OrchestrationPanel';
 import { FilterBar } from '@/components/filters/FilterBar';
 import { SignOutButton } from '@/components/SignInButton';
 
@@ -53,12 +55,15 @@ export default async function Dashboard() {
         <RefundsPanel />
       </section>
 
+      <CapabilityMatrix />
+
+      <OrchestrationPanel />
+
       <section className="upcoming">
-        <h2>Coming next (M4)</h2>
+        <h2>Coming next</h2>
         <ul>
-          <li>India regional heatmap (state-level)</li>
-          <li>Capability matrix + Fynd Orchestration panel</li>
-          <li>Storefront, FC Seller, and Ordering Channel filters</li>
+          <li>India regional heatmap (blocks on confirming the state data source — PRD Q3)</li>
+          <li>Populate <code>data/capabilities.json</code> with per-PG capability research + roadmap PGs</li>
           <li>Novus design system swap (currently using placeholder tokens)</li>
         </ul>
       </section>
