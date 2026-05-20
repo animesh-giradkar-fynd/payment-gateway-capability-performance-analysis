@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
 import { getBQ } from '@/lib/bq/client';
 import { filterOptionsQuery, type FilterOptionsRow } from '@/lib/bq/templates/filter-options';
 
@@ -9,9 +7,6 @@ export const runtime = 'nodejs';
 export const revalidate = 3600;
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-
   try {
     const bq = getBQ();
     const { query } = filterOptionsQuery();

@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
 import { getBQ } from '@/lib/bq/client';
 import { mopMixQuery, type MopMixRow } from '@/lib/bq/templates/mop-mix';
 import { parseFilters, filterCacheKey } from '@/lib/filters';
@@ -9,9 +7,6 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-
   let filters;
   try {
     filters = parseFilters(await req.json());

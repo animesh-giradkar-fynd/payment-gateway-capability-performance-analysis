@@ -1,7 +1,5 @@
 import { Suspense } from 'react';
-import { getServerSession } from 'next-auth/next';
-import { redirect } from 'next/navigation';
-import { authOptions } from '@/lib/auth';
+import { headers } from 'next/headers';
 import { MetricCards } from '@/components/panels/MetricCards';
 import { GatewayMix } from '@/components/panels/GatewayMix';
 import { MopMix } from '@/components/panels/MopMix';
@@ -11,33 +9,38 @@ import { GeographicPanel } from '@/components/panels/GeographicPanel';
 import { CapabilityMatrix } from '@/components/matrix/CapabilityMatrix';
 import { OrchestrationPanel } from '@/components/matrix/OrchestrationPanel';
 import { FilterBar } from '@/components/filters/FilterBar';
-import { SignOutButton } from '@/components/SignOutButton';
+import { FyndLogo } from '@/components/FyndLogo';
 
 export const dynamic = 'force-dynamic';
 
-export default async function Dashboard() {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    redirect('/');
-  }
+export default function Dashboard() {
+  // middleware.ts authenticated the request and forwarded the user via x-auth-user.
+  // Falls back to 'guest' if the header is missing (only happens when env vars
+  // aren't set, which middleware surfaces via x-auth-warning).
+  const user = headers().get('x-auth-user') ?? 'guest';
+  const authWarning = headers().get('x-auth-warning');
 
   return (
     <main className="dashboard">
       <header className="topbar">
-        <div>
-          <h1>Payments Capability</h1>
-          <span className="subtitle">Ecosystem health · 24h refresh</span>
+        <div className="topbar-brand">
+          <FyndLogo size={28} />
+          <div>
+            <h1>Payments Capability</h1>
+            <span className="subtitle">Ecosystem health · 24h refresh</span>
+          </div>
         </div>
         <div className="user-menu">
-          <span className="user-email">{session.user?.email}</span>
-          <SignOutButton />
+          <span className="user-email">Signed in as {user}</span>
         </div>
       </header>
 
-      {/*
-        Suspense boundary is required because FilterBar uses useSearchParams (Next.js 14 rule
-        for client components that read params in the App Router).
-      */}
+      {authWarning ? (
+        <div className="auth-warning">
+          ⚠ {authWarning} — anyone can reach this page until you configure them.
+        </div>
+      ) : null}
+
       <Suspense fallback={<div className="filter-bar-skeleton">Loading filters…</div>}>
         <FilterBar />
       </Suspense>

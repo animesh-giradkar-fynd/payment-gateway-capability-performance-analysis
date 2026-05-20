@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
 import { loadCapabilities } from '@/lib/capabilities';
 
 export const runtime = 'nodejs';
@@ -8,9 +6,6 @@ export const runtime = 'nodejs';
 export const revalidate = 300;
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-
   try {
     const data = await loadCapabilities();
     return NextResponse.json({ data, generatedAt: new Date().toISOString() });
