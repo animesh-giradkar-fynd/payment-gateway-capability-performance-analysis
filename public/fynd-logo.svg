@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Placeholder Fynd wordmark. Lowercase "fynd" in the brand's characteristic
+  style — to be replaced with the official brand asset when available.
+  Sized 120 × 36 viewBox. Color: brand pink (~#fa3e7d) approximating fynd.com.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 36" width="120" height="36" role="img" aria-label="Fynd">
+  <text
+    x="0"
+    y="28"
+    font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+    font-size="32"
+    font-weight="700"
+    letter-spacing="-1.5"
+    fill="#fa3e7d"
+  >fynd</text>
+</svg>

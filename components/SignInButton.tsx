@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 import { signIn, signOut } from 'next-auth/react';
 
 export function SignInButton() {
@@ -8,7 +9,14 @@ export function SignInButton() {
       onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
       className="signin-button"
     >
-      Sign in with Google
+      <Image
+        src="/google-icon.svg"
+        alt=""
+        width={18}
+        height={18}
+        aria-hidden
+      />
+      <span>Sign in with Google</span>
     </button>
   );
 }
