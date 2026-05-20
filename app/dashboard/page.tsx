@@ -7,6 +7,7 @@ import { GatewayMix } from '@/components/panels/GatewayMix';
 import { MopMix } from '@/components/panels/MopMix';
 import { FailuresPanel } from '@/components/panels/FailuresPanel';
 import { RefundsPanel } from '@/components/panels/RefundsPanel';
+import { GeographicPanel } from '@/components/panels/GeographicPanel';
 import { CapabilityMatrix } from '@/components/matrix/CapabilityMatrix';
 import { OrchestrationPanel } from '@/components/matrix/OrchestrationPanel';
 import { FilterBar } from '@/components/filters/FilterBar';
@@ -55,6 +56,10 @@ export default async function Dashboard() {
         <RefundsPanel />
       </section>
 
+      <section className="metric-row">
+        <GeographicPanel />
+      </section>
+
       <CapabilityMatrix />
 
       <OrchestrationPanel />
@@ -62,9 +67,9 @@ export default async function Dashboard() {
       <section className="upcoming">
         <h2>Coming next</h2>
         <ul>
-          <li>India regional heatmap (blocks on confirming the state data source — PRD Q3)</li>
-          <li>Populate <code>data/capabilities.json</code> with per-PG capability research + roadmap PGs</li>
-          <li>Novus design system swap (currently using placeholder tokens)</li>
+          <li>State-level India heatmap (swap <code>GeographicPanel</code> for <code>react-simple-maps</code> once region data source confirmed — PRD Q3)</li>
+          <li>Populate <code>data/capabilities.json</code> with per-PG capability research + the roadmap PG list</li>
+          <li>Novus design system swap (mechanical with the <code>--nov-*</code> tokens already in place)</li>
         </ul>
       </section>
     </main>

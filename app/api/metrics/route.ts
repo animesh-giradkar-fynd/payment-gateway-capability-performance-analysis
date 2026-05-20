@@ -2,24 +2,26 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getBQ } from '@/lib/bq/client';
-import { metricsQuery, type MetricsRow } from '@/lib/bq/templates/metrics';
+import {
+  metricsQuery,
+  previousPeriodFor,
+  type MetricsRow,
+  type MetricsResponse,
+} from '@/lib/bq/templates/metrics';
 import { parseFilters, filterCacheKey } from '@/lib/filters';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
-  // 1. Auth check (D005)
   const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
-  // 2. Parse + validate filters
   let filters;
   try {
-    const body = await req.json();
-    filters = parseFilters(body);
+    filters = parseFilters(await req.json());
   } catch (err) {
     return NextResponse.json(
       { error: 'invalid_filters', message: err instanceof Error ? err.message : String(err) },
@@ -27,41 +29,61 @@ export async function POST(req: Request) {
     );
   }
 
-  // 3. Execute BQ query
   try {
     const bq = getBQ();
-    const { query, params, types } = metricsQuery(filters);
     const location = process.env.BQ_LOCATION ?? 'US';
-
     const start = Date.now();
-    const [rows] = await bq.query({
-      query,
-      params,
-      types: types as Record<string, string>,
-      location,
-    });
+
+    const current = metricsQuery(filters);
+    const queries: Array<Promise<MetricsRow | null>> = [
+      bq.query({
+        query: current.query,
+        params: current.params,
+        types: current.types as Record<string, string>,
+        location,
+      }).then(([rows]) => (rows[0] as MetricsRow | undefined) ?? null),
+    ];
+
+    if (filters.compareToPreviousPeriod) {
+      const prev = metricsQuery(previousPeriodFor(filters));
+      queries.push(
+        bq.query({
+          query: prev.query,
+          params: prev.params,
+          types: prev.types as Record<string, string>,
+          location,
+        }).then(([rows]) => (rows[0] as MetricsRow | undefined) ?? null),
+      );
+    }
+
+    const [currentRow, previousRow = null] = await Promise.all(queries);
     const duration = Date.now() - start;
 
-    // Structured log — filter shape hash + duration, no raw values
     console.log(
       JSON.stringify({
         handler: '/api/metrics',
         cacheKey: filterCacheKey(filters),
-        rows: rows.length,
+        compare: filters.compareToPreviousPeriod,
         durationMs: duration,
       }),
     );
 
-    const row = (rows[0] as MetricsRow | undefined) ?? null;
-    return NextResponse.json({ data: row, generatedAt: new Date().toISOString() });
+    const response: MetricsResponse = {
+      current: currentRow ?? {
+        transaction_volume: 0,
+        successful_count: 0,
+        failed_count: 0,
+        success_rate_pct: null,
+        failure_rate_pct: null,
+        avg_ticket_size: null,
+      },
+      previous: previousRow,
+    };
+
+    return NextResponse.json({ data: response, generatedAt: new Date().toISOString() });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(
-      JSON.stringify({
-        handler: '/api/metrics',
-        error: message,
-      }),
-    );
+    console.error(JSON.stringify({ handler: '/api/metrics', error: message }));
     return NextResponse.json({ error: 'bq_query_failed', message }, { status: 500 });
   }
 }

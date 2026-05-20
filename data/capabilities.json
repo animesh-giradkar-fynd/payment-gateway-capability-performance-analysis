@@ -66,7 +66,7 @@
     }
   ],
   "gateways": {
-    "_comment": "Per-PG capability state. Keyed by aggregator name from gringotts (matches `aggregator.name`). Cell values: 'live' | 'beta' | 'available' | 'not-offered'. Live derivation overlay comes from BQ in /api/capability-matrix.",
+    "_comment": "Per-PG capability state for currently-integrated gateways. Keyed by aggregator name from gringotts (matches `aggregator.name`). Cell values: 'live' | 'beta' | 'available' | 'not-offered'. Anything missing defaults to 'not-offered'.",
     "Razorpay": {},
     "Juspay": {},
     "Cashfree": {},
@@ -74,6 +74,13 @@
     "PayU Money": {},
     "Pine Labs": {},
     "Simpl": {}
+  },
+  "roadmapGateways": {
+    "_comment": "Roadmap gateways (PRD Q1) — gateways Fynd plans to integrate but hasn't yet. Rendered in a visually separated band below the main matrix. Populate with the roadmap PG list from Animesh.",
+    "_example": {
+      "hosted-redirect": "available",
+      "domestic-credit": "available"
+    }
   },
   "orchestration": {
     "_comment": "Separate panel below the matrix per PRD F8. Status: 'live' | 'beta' | 'planned'.",

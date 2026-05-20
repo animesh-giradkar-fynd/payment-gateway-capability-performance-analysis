@@ -10,24 +10,18 @@ export type MetricsRow = {
   avg_ticket_size: number | null;
 };
 
+export type MetricsResponse = {
+  current: MetricsRow;
+  previous: MetricsRow | null;
+};
+
 /**
  * Metric-cards query — returns 6 values for the current filter slice.
  *
- * Filter dimensions wired:
- *   - dateRange (mandatory)
- *   - aggregatorIds (PG multi-select) — applied as transaction.aggregator_id IN UNNEST(@aggregatorIds)
- *   - paymentModes (MOP multi-select) — applied as transaction.payment_mode IN UNNEST(@paymentModes)
- *
- * Not yet wired (queued):
- *   - merchantProfileIds (storefront)
- *   - sellerIds (FC seller)
- *   - orderingChannel (avis-side join)
- *   - WoW delta
- *   - avg latency
- *   - refund rate (separate query family per architecture.md)
- *
- * Per D007: V2 shape — latest-status CTE, success status set, standard exclusions.
- * Per D006: Zenith table prefixes and renames.
+ * When `filters.compareToPreviousPeriod` is true, the route handler runs this query a
+ * second time with the previous-period date range and exposes both via MetricsResponse.
+ * Single-query helper keeps the template focused; the route layer handles the two-call
+ * orchestration so each query is independently cached by Next/SWR.
  */
 export function metricsQuery(filters: DashboardFilters): BQQuery {
   const slice = buildSliceCTE(filters);
@@ -51,4 +45,19 @@ export function metricsQuery(filters: DashboardFilters): BQQuery {
   `;
 
   return { query, params: slice.params, types: slice.types };
+}
+
+/**
+ * Given a date range, compute the equal-length window immediately preceding it.
+ * Used for the WoW delta — if filter is "Apr 21 → May 20" (30 days), previous is
+ * "Mar 22 → Apr 20".
+ */
+export function previousPeriodFor(filters: DashboardFilters): DashboardFilters {
+  const from = new Date(filters.dateRange.from + 'T00:00:00Z');
+  const to = new Date(filters.dateRange.to + 'T00:00:00Z');
+  const spanMs = to.getTime() - from.getTime();
+  const prevTo = new Date(from.getTime() - 24 * 60 * 60 * 1000);
+  const prevFrom = new Date(prevTo.getTime() - spanMs);
+  const fmt = (d: Date) => d.toISOString().split('T')[0];
+  return { ...filters, dateRange: { from: fmt(prevFrom), to: fmt(prevTo) } };
 }

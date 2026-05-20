@@ -56,6 +56,7 @@ export function CapabilityMatrix() {
 
   const data = resp.data;
   const gateways = Object.keys(data.gateways);
+  const roadmap = Object.keys(data.roadmapGateways);
 
   return (
     <section className="matrix-section">
@@ -73,46 +74,23 @@ export function CapabilityMatrix() {
           <code>data/capabilities.json</code>.
         </div>
       ) : (
-        <div className="matrix-scroll">
-          <table className="matrix-table">
-            <thead>
-              <tr>
-                <th className="matrix-row-head matrix-sticky-col">Capability</th>
-                {gateways.map((g) => (
-                  <th key={g} className="matrix-col-head" title={g}>
-                    {g}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {data.bands.map((band) => (
-                <Band key={band.id} bandLabel={band.label} colCount={gateways.length + 1}>
-                  {band.rows.map((row) => (
-                    <tr key={row.id}>
-                      <td className="matrix-row-label matrix-sticky-col" title={row.label}>
-                        {row.label}
-                      </td>
-                      {gateways.map((g) => {
-                        const state = (data.gateways[g]?.[row.id] ?? 'not-offered') as CellState;
-                        return (
-                          <td
-                            key={g}
-                            className={`matrix-cell matrix-cell-${state}`}
-                            title={`${g} · ${row.label} · ${STATE_LABEL[state]}`}
-                          >
-                            <span className="matrix-glyph">{STATE_GLYPH[state]}</span>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </Band>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <MatrixTable bands={data.bands} gateways={gateways} cellSource={data.gateways} />
       )}
+
+      {roadmap.length > 0 ? (
+        <div className="matrix-roadmap">
+          <div className="matrix-roadmap-header">
+            <span className="matrix-roadmap-pill">Roadmap</span>
+            <span className="muted">Gateways Fynd plans to integrate</span>
+          </div>
+          <MatrixTable
+            bands={data.bands}
+            gateways={roadmap}
+            cellSource={data.roadmapGateways}
+            roadmap
+          />
+        </div>
+      ) : null}
 
       <p className="matrix-footer muted">
         Cells default to &ldquo;Not offered&rdquo; until populated. Edit{' '}
@@ -120,6 +98,60 @@ export function CapabilityMatrix() {
         <code>beta</code>, or <code>available</code>.
       </p>
     </section>
+  );
+}
+
+function MatrixTable({
+  bands,
+  gateways,
+  cellSource,
+  roadmap = false,
+}: {
+  bands: CapabilitiesData['bands'];
+  gateways: string[];
+  cellSource: Record<string, Record<string, CellState>>;
+  roadmap?: boolean;
+}) {
+  return (
+    <div className="matrix-scroll">
+      <table className={`matrix-table ${roadmap ? 'matrix-table-roadmap' : ''}`}>
+        <thead>
+          <tr>
+            <th className="matrix-row-head matrix-sticky-col">Capability</th>
+            {gateways.map((g) => (
+              <th key={g} className="matrix-col-head" title={g}>
+                {g}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {bands.map((band) => (
+            <Band key={band.id} bandLabel={band.label} colCount={gateways.length + 1}>
+              {band.rows.map((row) => (
+                <tr key={row.id}>
+                  <td className="matrix-row-label matrix-sticky-col" title={row.label}>
+                    {row.label}
+                  </td>
+                  {gateways.map((g) => {
+                    const state = (cellSource[g]?.[row.id] ?? 'not-offered') as CellState;
+                    return (
+                      <td
+                        key={g}
+                        className={`matrix-cell matrix-cell-${state}`}
+                        title={`${g} · ${row.label} · ${STATE_LABEL[state]}`}
+                      >
+                        <span className="matrix-glyph">{STATE_GLYPH[state]}</span>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </Band>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

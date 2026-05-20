@@ -19,10 +19,17 @@ export type CapabilitiesData = {
   lastUpdated: string;
   bands: CapabilityBand[];
   /**
-   * Per-PG capability state. Keyed by gateway display name → row id → cell state.
-   * Cells not present are treated as 'not-offered' by the renderer.
+   * Per-PG capability state for currently-integrated gateways. Keyed by gateway display
+   * name → row id → cell state. Cells not present default to 'not-offered'.
    */
   gateways: Record<string, Record<string, CellState>>;
+  /**
+   * Roadmap PGs (PRD Q1 / D003) — gateways Fynd plans to integrate but hasn't yet. Rendered
+   * in a visually separated band below the main matrix. Same cell-state semantics as
+   * `gateways`; values are typically 'available' (gateway offers it, Fynd will integrate)
+   * or 'not-offered'.
+   */
+  roadmapGateways: Record<string, Record<string, CellState>>;
   orchestration: { rows: OrchestrationRow[] };
 };
 
@@ -36,22 +43,30 @@ export async function loadCapabilities(): Promise<CapabilitiesData> {
   const raw = await readFile(JSON_PATH, 'utf-8');
   const parsed = JSON.parse(raw);
 
-  // Normalize: gateways may contain `_comment` strings (per the JSON template). Strip them
-  // so the renderer only sees real PG keys.
-  const cleanGateways: Record<string, Record<string, CellState>> = {};
-  for (const [name, cells] of Object.entries(parsed.gateways ?? {})) {
-    if (name.startsWith('_')) continue;
-    if (!cells || typeof cells !== 'object') continue;
-    cleanGateways[name] = cells as Record<string, CellState>;
-  }
+  // Normalize: gateway maps may contain `_comment` strings (per the JSON template). Strip
+  // them so the renderer only sees real PG keys.
+  const cleanGateways = stripCommentKeys(parsed.gateways);
+  const cleanRoadmap = stripCommentKeys(parsed.roadmapGateways);
 
   return {
     schemaVersion: parsed.schemaVersion ?? 1,
     lastUpdated: parsed.lastUpdated ?? '',
     bands: parsed.bands ?? [],
     gateways: cleanGateways,
+    roadmapGateways: cleanRoadmap,
     orchestration: { rows: parsed.orchestration?.rows ?? [] },
   };
+}
+
+function stripCommentKeys(input: unknown): Record<string, Record<string, CellState>> {
+  const out: Record<string, Record<string, CellState>> = {};
+  if (!input || typeof input !== 'object') return out;
+  for (const [name, cells] of Object.entries(input as Record<string, unknown>)) {
+    if (name.startsWith('_')) continue;
+    if (!cells || typeof cells !== 'object') continue;
+    out[name] = cells as Record<string, CellState>;
+  }
+  return out;
 }
 
 /** Resolve a cell — undefined cells fall through to 'not-offered'. */
