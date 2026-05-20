@@ -85,38 +85,55 @@ body {
   margin-bottom: 0;
 }
 
-/* Google sign-in button — per Google's brand guidelines:
-   white background, dark text, 18px icon left, 14px label, 40px height,
-   1px neutral border, subtle hover bg. */
-.signin-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  width: 100%;
+/* === Sign-in form === */
+.signin-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--nov-spacing-3);
+  text-align: left;
+}
+.signin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.signin-field-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--nov-color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.signin-field input {
+  border: 1px solid var(--nov-color-border-neutral-6);
+  border-radius: var(--nov-radius-md);
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
   background: var(--nov-color-bg-surface);
   color: var(--nov-color-text-primary);
-  border: 1px solid var(--nov-color-border-neutral-6);
-  padding: 10px 20px;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.signin-field input:focus {
+  outline: none;
+  border-color: var(--nov-color-text-brand-9);
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
+}
+.signin-submit {
+  margin-top: 8px;
+  background: var(--nov-color-bg-surface-brand-9);
+  color: white;
+  border: none;
+  padding: 11px 20px;
   border-radius: var(--nov-radius-md);
   font-size: 14px;
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
-  transition: background-color 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+  transition: background-color 120ms ease, opacity 120ms ease;
 }
-.signin-button:hover {
-  background: rgba(0, 0, 0, 0.03);
-  border-color: var(--nov-color-text-secondary);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-}
-.signin-button:active {
-  background: rgba(0, 0, 0, 0.05);
-}
-.signin-button img {
-  display: block;
-  flex-shrink: 0;
-}
+.signin-submit:hover:not(:disabled) { opacity: 0.92; }
+.signin-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .signout-button {
   padding: 6px 12px;

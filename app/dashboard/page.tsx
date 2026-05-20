@@ -11,7 +11,7 @@ import { GeographicPanel } from '@/components/panels/GeographicPanel';
 import { CapabilityMatrix } from '@/components/matrix/CapabilityMatrix';
 import { OrchestrationPanel } from '@/components/matrix/OrchestrationPanel';
 import { FilterBar } from '@/components/filters/FilterBar';
-import { SignOutButton } from '@/components/SignInButton';
+import { SignOutButton } from '@/components/SignOutButton';
 
 export const dynamic = 'force-dynamic';
 
