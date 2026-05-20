@@ -125,8 +125,8 @@ export function buildSliceCTE(
         m.name AS brand_name,
         mp.name AS profile_name,
         agg.name AS aggregator_name,
-        -- dbe_transaction has no `meta` column in Zenith (Boltic transformation dropped it).
-        -- Failures panel falls back to raw_aggregator_status only — no JSON error details.
+        -- dbe_transaction has no meta column in Zenith (Boltic transformation dropped it);
+        -- failures panel falls back to raw_aggregator_status only.
         CAST(NULL AS STRING) AS error_code,
         CAST(NULL AS STRING) AS error_reason,
         CAST(NULL AS STRING) AS error_description
