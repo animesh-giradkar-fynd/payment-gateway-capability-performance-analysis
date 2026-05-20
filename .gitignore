@@ -1,0 +1,51 @@
+# === Planning zone — LOCAL ONLY, NEVER PUSH ===
+_planning/
+CLAUDE.md
+payments-capability-dashboard-handoff.md
+
+# === Secrets ===
+.env
+.env.*
+!.env.example
+*.pem
+*-credentials.json
+google-credentials*.json
+*-service-account.json
+
+# === Build artifacts ===
+.next/
+out/
+dist/
+build/
+next-env.d.ts
+*.tsbuildinfo
+
+# === Dependencies ===
+node_modules/
+.pnpm-store/
+
+# === Editor / OS ===
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/settings.json
+.idea/
+
+# === Logs & caches ===
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.cache/
+.turbo/
+.parcel-cache/
+.vitest-cache/
+
+# === Test & coverage ===
+coverage/
+.nyc_output/
+
+# === Project-specific ===
+data/snapshots/
+.vercel/

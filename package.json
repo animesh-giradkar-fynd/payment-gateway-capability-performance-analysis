@@ -1,0 +1,41 @@
+{
+  "name": "payments-capability-dashboard",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Internal Fynd Payments Capability Dashboard",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "@google-cloud/bigquery": "^7.9.0",
+    "next": "^14.2.5",
+    "next-auth": "^4.24.7",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "swr": "^2.2.5",
+    "zod": "^3.23.8",
+    "zustand": "^4.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.5",
+    "husky": "^9.1.0",
+    "typescript": "^5.5.0",
+    "vitest": "^1.6.0"
+  },
+  "_comments": {
+    "novus": "Novus (Fynd design system) is intentionally NOT installed yet. It's a git+ssh dependency on Azure DevOps GoFynd/FyndDesignSystem and requires SSH access. Add in M2 once SSH is verified: 'novus': 'git+ssh://git@ssh.dev.azure.com:v3/GoFynd/FyndDesignSystem/novus#2.0.0'",
+    "recharts": "Add in M2 for chart panels.",
+    "react-simple-maps": "Add in M4 for the India heatmap."
+  }
+}

@@ -1,0 +1,113 @@
+{
+  "_comment": "Skeleton for the curated capability matrix data. Real entries land in M3 when Animesh provides the roadmap PG list (PRD Q1). Schema follows design-language.md 4-state model.",
+  "schemaVersion": 1,
+  "lastUpdated": "2026-05-20",
+  "bands": [
+    {
+      "id": "checkout",
+      "label": "Checkout experience",
+      "rows": [
+        { "id": "hosted-redirect", "label": "Hosted / redirect checkout" },
+        { "id": "dropin-iframe", "label": "Drop-in / iframe widget" },
+        { "id": "native-api", "label": "Native API checkout" },
+        { "id": "magic-checkout", "label": "Magic Checkout / one-step flows" },
+        { "id": "qr", "label": "QR-based checkout (static + dynamic)" }
+      ]
+    },
+    {
+      "id": "payment-methods",
+      "label": "Payment methods",
+      "rows": [
+        { "id": "domestic-credit", "label": "Domestic credit cards" },
+        { "id": "domestic-debit", "label": "Domestic debit cards" },
+        { "id": "international-cards", "label": "International cards" },
+        { "id": "upi-collect", "label": "UPI Collect" },
+        { "id": "upi-intent", "label": "UPI Intent" },
+        { "id": "upi-autopay", "label": "UPI AutoPay" },
+        { "id": "netbanking", "label": "Netbanking" },
+        { "id": "wallets", "label": "Wallets (aggregated)" },
+        { "id": "bnpl", "label": "BNPL (aggregated)" },
+        { "id": "cod", "label": "COD (with prepaid-on-COD upsell)" }
+      ]
+    },
+    {
+      "id": "lifecycle",
+      "label": "Transaction lifecycle",
+      "rows": [
+        { "id": "pre-auth-capture", "label": "Pre-auth + manual capture" },
+        { "id": "partial-capture", "label": "Partial capture" },
+        { "id": "void-cancel", "label": "Void / cancel" },
+        { "id": "refund-full-partial", "label": "Refund (full + partial)" },
+        { "id": "instant-refund", "label": "Instant refund" },
+        { "id": "network-tokenization", "label": "Network tokenization" },
+        { "id": "card-on-file", "label": "Card-on-file (PCI vault)" }
+      ]
+    },
+    {
+      "id": "risk",
+      "label": "Risk & verification",
+      "rows": [
+        { "id": "3ds-2", "label": "3DS 2.0" },
+        { "id": "frictionless-3ds", "label": "Frictionless 3DS" },
+        { "id": "risk-scoring", "label": "Risk scoring (rule-based or ML)" },
+        { "id": "chargeback-portal", "label": "Chargeback / dispute portal" }
+      ]
+    },
+    {
+      "id": "settlement",
+      "label": "Settlement & operations",
+      "rows": [
+        { "id": "settlement-cadence", "label": "Settlement cadence (T+0 / T+1 / custom)" },
+        { "id": "instant-settlement", "label": "Instant settlement" },
+        { "id": "reconciliation", "label": "Reconciliation files / API" },
+        { "id": "webhooks", "label": "Webhooks (event coverage + reliability)" },
+        { "id": "status-page", "label": "Public status page + uptime SLA" }
+      ]
+    }
+  ],
+  "gateways": {
+    "_comment": "Per-PG capability state. Keyed by aggregator name from gringotts (matches `aggregator.name`). Cell values: 'live' | 'beta' | 'available' | 'not-offered'. Live derivation overlay comes from BQ in /api/capability-matrix.",
+    "Razorpay": {},
+    "Juspay": {},
+    "Cashfree": {},
+    "CCAvenue": {},
+    "PayU Money": {},
+    "Pine Labs": {},
+    "Simpl": {}
+  },
+  "orchestration": {
+    "_comment": "Separate panel below the matrix per PRD F8. Status: 'live' | 'beta' | 'planned'.",
+    "rows": [
+      {
+        "id": "smart-routing",
+        "label": "Smart routing",
+        "description": "Route each transaction to the gateway with the highest live success rate for that MOP.",
+        "status": "planned"
+      },
+      {
+        "id": "fallback-routing",
+        "label": "Fallback routing",
+        "description": "Automatically retry on a second gateway when the first fails with a recoverable error.",
+        "status": "planned"
+      },
+      {
+        "id": "ab-between-gateways",
+        "label": "A/B between gateways",
+        "description": "Run controlled splits to compare gateway performance on identical traffic.",
+        "status": "planned"
+      },
+      {
+        "id": "cost-based-routing",
+        "label": "Cost-based routing",
+        "description": "Prefer the lowest-cost gateway when success rates are within tolerance.",
+        "status": "planned"
+      },
+      {
+        "id": "health-based-routing",
+        "label": "Health-based routing",
+        "description": "Auto-degrade a gateway showing elevated failure or latency, and recover it when healthy.",
+        "status": "planned"
+      }
+    ]
+  }
+}

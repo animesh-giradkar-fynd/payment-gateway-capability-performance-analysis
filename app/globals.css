@@ -1,0 +1,192 @@
+/*
+ * Foundation styles for M1.
+ * These are placeholder styles approximating Novus tokens. They get replaced when
+ * Novus is installed in M2 (design-language.md). Token names mirror Novus conventions
+ * (--nov-*) so the swap is mechanical.
+ */
+:root {
+  --nov-color-bg-canvas: #f6f7f9;
+  --nov-color-bg-surface: #ffffff;
+  --nov-color-border-neutral-4: #e5e7eb;
+  --nov-color-border-neutral-6: #d1d5db;
+  --nov-color-text-primary: #111827;
+  --nov-color-text-secondary: #6b7280;
+  --nov-color-text-brand-9: #1d4ed8;
+  --nov-color-text-success-9: #15803d;
+  --nov-color-text-error-9: #b91c1c;
+  --nov-color-text-warning-9: #b45309;
+  --nov-color-bg-surface-brand-9: #2563eb;
+  --nov-color-bg-surface-success-2: #dcfce7;
+  --nov-color-bg-surface-error-2: #fee2e2;
+
+  --nov-radius-lg: 12px;
+  --nov-radius-md: 8px;
+  --nov-radius-xs: 4px;
+
+  --nov-shadow-s: 0 1px 3px rgba(17, 24, 39, 0.06);
+  --nov-shadow-m: 0 4px 16px rgba(17, 24, 39, 0.08);
+
+  --nov-spacing-2: 8px;
+  --nov-spacing-3: 12px;
+  --nov-spacing-4: 16px;
+  --nov-spacing-6: 24px;
+  --nov-spacing-8: 32px;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--nov-color-bg-canvas);
+  color: var(--nov-color-text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* === Sign-in === */
+.signin-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: var(--nov-spacing-6);
+}
+.signin-card {
+  background: var(--nov-color-bg-surface);
+  border-radius: var(--nov-radius-lg);
+  box-shadow: var(--nov-shadow-m);
+  padding: 48px;
+  max-width: 420px;
+  text-align: center;
+}
+.signin-card h1 { margin: 0 0 12px 0; font-size: 28px; font-weight: 600; }
+.signin-card p { color: var(--nov-color-text-secondary); margin: 0 0 24px 0; }
+.signin-card .footer { font-size: 12px; margin-top: 24px; }
+.signin-card .error {
+  color: var(--nov-color-text-error-9);
+  background: var(--nov-color-bg-surface-error-2);
+  padding: var(--nov-spacing-3);
+  border-radius: var(--nov-radius-md);
+  font-size: 13px;
+  margin-top: 16px;
+}
+
+.signin-button, .signout-button {
+  background: var(--nov-color-bg-surface-brand-9);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: var(--nov-radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.signin-button:hover, .signout-button:hover { opacity: 0.92; }
+.signout-button {
+  padding: 6px 12px;
+  font-size: 12px;
+  background: transparent;
+  color: var(--nov-color-text-secondary);
+  border: 1px solid var(--nov-color-border-neutral-6);
+}
+
+/* === Dashboard === */
+.dashboard {
+  padding: var(--nov-spacing-6);
+  max-width: 1400px;
+  margin: 0 auto;
+}
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: var(--nov-spacing-4);
+  border-bottom: 1px solid var(--nov-color-border-neutral-4);
+  margin-bottom: var(--nov-spacing-6);
+}
+.topbar h1 { margin: 0; font-size: 20px; font-weight: 600; }
+.topbar .subtitle {
+  font-size: 12px;
+  color: var(--nov-color-text-secondary);
+}
+.topbar .user-menu {
+  display: flex;
+  align-items: center;
+  gap: var(--nov-spacing-3);
+}
+.topbar .user-email {
+  font-size: 13px;
+  color: var(--nov-color-text-secondary);
+}
+
+.filter-bar-placeholder {
+  background: var(--nov-color-bg-surface);
+  border: 1px dashed var(--nov-color-border-neutral-6);
+  border-radius: var(--nov-radius-md);
+  padding: var(--nov-spacing-3) var(--nov-spacing-4);
+  margin-bottom: var(--nov-spacing-4);
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+.filter-bar-placeholder .muted { color: var(--nov-color-text-secondary); font-style: italic; }
+
+.metric-row {
+  margin-bottom: var(--nov-spacing-8);
+}
+
+.metric-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--nov-spacing-4);
+}
+@media (max-width: 900px) {
+  .metric-cards { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* === Panel === */
+.panel {
+  background: var(--nov-color-bg-surface);
+  border-radius: var(--nov-radius-lg);
+  box-shadow: var(--nov-shadow-s);
+  padding: var(--nov-spacing-4);
+}
+.panel-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--nov-color-text-secondary);
+  margin-bottom: var(--nov-spacing-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.panel-body { min-height: 64px; }
+.metric-value {
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--nov-color-text-primary);
+}
+.metric-sub {
+  font-size: 12px;
+  color: var(--nov-color-text-secondary);
+  margin-top: 6px;
+}
+.panel-loading, .panel-error, .panel-empty {
+  color: var(--nov-color-text-secondary);
+  font-size: 13px;
+}
+.panel-error {
+  color: var(--nov-color-text-error-9);
+  background: var(--nov-color-bg-surface-error-2);
+  padding: var(--nov-spacing-2);
+  border-radius: var(--nov-radius-xs);
+}
+
+/* === Upcoming section (M1 only — placeholder) === */
+.upcoming {
+  background: var(--nov-color-bg-surface);
+  border-radius: var(--nov-radius-lg);
+  padding: var(--nov-spacing-4);
+  box-shadow: var(--nov-shadow-s);
+}
+.upcoming h2 { font-size: 14px; margin: 0 0 var(--nov-spacing-3) 0; color: var(--nov-color-text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.upcoming ul { margin: 0; padding-left: 20px; color: var(--nov-color-text-secondary); font-size: 13px; }
+.upcoming li { margin-bottom: 6px; }

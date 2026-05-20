@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# 1. Refuse any commit that touches the planning zone.
+if git diff --cached --name-only | grep -E '^(_planning/|CLAUDE\.md$|payments-capability-dashboard-handoff\.md$)'; then
+  echo ""
+  echo "ERROR: Refusing to commit planning docs. These are local-only per project rules."
+  echo "If a planning doc was accidentally staged, run:"
+  echo "  git reset HEAD _planning/ CLAUDE.md payments-capability-dashboard-handoff.md"
+  echo ""
+  exit 1
+fi
+
+# 2. Secret scanner.
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged --redact || exit 1
+else
+  echo "WARN: gitleaks not installed. Install via 'brew install gitleaks' to enable secret scanning."
+fi
