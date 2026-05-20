@@ -86,7 +86,7 @@ export function buildSliceCTE(
   // (the join is a small additional scan cost we don't want to pay on every query otherwise).
   const joinOrders = !!filters.orderingChannel?.length;
   const ordersJoinSql = joinOrders
-    ? `LEFT JOIN ${Z}.orders zo ON zo.order_id = t.merchant_order_id`
+    ? `LEFT JOIN ${Z}.dbe_orders zo ON zo.order_id = t.merchant_order_id`
     : '';
   if (joinOrders && filters.orderingChannel) {
     extraPredicates.push('zo.ordering_source IN UNNEST(@orderingChannel)');
@@ -105,7 +105,7 @@ export function buildSliceCTE(
         transaction_id,
         id AS status_mapper_id,
         ROW_NUMBER() OVER (PARTITION BY transaction_id ORDER BY id DESC) AS rn
-      FROM ${Z}.transaction_status
+      FROM ${Z}.dbe_transaction_status
       WHERE DATE(created_on) BETWEEN @from AND @to
     ),
     joined AS (
@@ -129,16 +129,16 @@ export function buildSliceCTE(
         JSON_VALUE(t.meta, '$.error_code') AS error_code,
         JSON_VALUE(t.meta, '$.error_reason') AS error_reason,
         JSON_VALUE(t.meta, '$.error_description') AS error_description
-      FROM ${Z}.transaction t
+      FROM ${Z}.dbe_transaction t
       LEFT JOIN latest_status ls
         ON ls.transaction_id = t.id AND ls.rn = 1
-      LEFT JOIN ${Z}.aggregator_order_status_mapper agg_map
+      LEFT JOIN ${Z}.dbe_aggregator_order_status_mapper agg_map
         ON agg_map.id = ls.status_mapper_id
-      LEFT JOIN ${Z}.aggregator agg
+      LEFT JOIN ${Z}.dbe_aggregator agg
         ON agg.aggregator_id = t.aggregator_id
-      LEFT JOIN ${Z}.merchant_profile mp
+      LEFT JOIN ${Z}.dbe_merchant_profile mp
         ON mp.id = t.merchant_profile_id
-      LEFT JOIN ${Z}.merchant m
+      LEFT JOIN ${Z}.dbe_merchant m
         ON m.id = mp.merchant_id
       ${ordersJoinSql}
       WHERE DATE(t.created_on) BETWEEN @from AND @to

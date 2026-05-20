@@ -27,11 +27,11 @@ export function filterOptionsQuery(): BQQuery {
         m.id AS seller_id,
         m.name AS seller_name,
         zo.ordering_source
-      FROM ${Z}.transaction t
-      LEFT JOIN ${Z}.aggregator agg ON agg.aggregator_id = t.aggregator_id
-      LEFT JOIN ${Z}.merchant_profile mp ON mp.id = t.merchant_profile_id
-      LEFT JOIN ${Z}.merchant m ON m.id = mp.merchant_id
-      LEFT JOIN ${Z}.orders zo ON zo.order_id = t.merchant_order_id
+      FROM ${Z}.dbe_transaction t
+      LEFT JOIN ${Z}.dbe_aggregator agg ON agg.aggregator_id = t.aggregator_id
+      LEFT JOIN ${Z}.dbe_merchant_profile mp ON mp.id = t.merchant_profile_id
+      LEFT JOIN ${Z}.dbe_merchant m ON m.id = mp.merchant_id
+      LEFT JOIN ${Z}.dbe_orders zo ON zo.order_id = t.merchant_order_id
       WHERE DATE(t.created_on) >= DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)
         AND t.is_active = TRUE
         AND LOWER(IFNULL(m.name, '')) NOT LIKE '%test%'
