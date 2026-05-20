@@ -1,5 +1,5 @@
 {
-  "_comment": "Skeleton for the curated capability matrix data. Real entries land in M3 when Animesh provides the roadmap PG list (PRD Q1). Schema follows design-language.md 4-state model.",
+  "_comment": "Curated capability matrix data. Cell values: 'live' | 'beta' | 'available' | 'not-offered'. Anything missing defaults to 'not-offered'. The current state represents what each PG offers IN MARKET (best-effort, public knowledge). Fynd's actual integration state defaults to 'available' — Animesh: flip cells to 'live' / 'beta' based on what's actually integrated. The orchestration panel and roadmap band are populated separately.",
   "schemaVersion": 1,
   "lastUpdated": "2026-05-20",
   "bands": [
@@ -66,21 +66,84 @@
     }
   ],
   "gateways": {
-    "_comment": "Per-PG capability state for currently-integrated gateways. Keyed by aggregator name from gringotts (matches `aggregator.name`). Cell values: 'live' | 'beta' | 'available' | 'not-offered'. Anything missing defaults to 'not-offered'.",
-    "Razorpay": {},
-    "Juspay": {},
-    "Cashfree": {},
-    "CCAvenue": {},
-    "PayU Money": {},
-    "Pine Labs": {},
-    "Simpl": {}
+    "_comment": "Per-PG capability state. Values reflect what each gateway OFFERS in market (best-effort public knowledge). Animesh: flip from 'available' to 'live' where Fynd has actually integrated the capability, to 'beta' where the integration is in pilot, or remove entries where the PG doesn't actually support it.",
+    "Razorpay": {
+      "hosted-redirect": "available", "dropin-iframe": "available", "native-api": "available", "magic-checkout": "available", "qr": "available",
+      "domestic-credit": "available", "domestic-debit": "available", "international-cards": "available",
+      "upi-collect": "available", "upi-intent": "available", "upi-autopay": "available",
+      "netbanking": "available", "wallets": "available", "bnpl": "available", "cod": "available",
+      "pre-auth-capture": "available", "partial-capture": "available", "void-cancel": "available",
+      "refund-full-partial": "available", "instant-refund": "available",
+      "network-tokenization": "available", "card-on-file": "available",
+      "3ds-2": "available", "frictionless-3ds": "available", "risk-scoring": "available", "chargeback-portal": "available",
+      "settlement-cadence": "available", "instant-settlement": "available", "reconciliation": "available",
+      "webhooks": "available", "status-page": "available"
+    },
+    "Juspay": {
+      "dropin-iframe": "available", "native-api": "available",
+      "domestic-credit": "available", "domestic-debit": "available", "international-cards": "available",
+      "upi-collect": "available", "upi-intent": "available", "upi-autopay": "available",
+      "netbanking": "available", "wallets": "available", "bnpl": "available",
+      "pre-auth-capture": "available", "partial-capture": "available", "void-cancel": "available",
+      "refund-full-partial": "available", "instant-refund": "available",
+      "network-tokenization": "available", "card-on-file": "available",
+      "3ds-2": "available", "frictionless-3ds": "available", "risk-scoring": "available", "chargeback-portal": "available",
+      "settlement-cadence": "available", "reconciliation": "available",
+      "webhooks": "available", "status-page": "available"
+    },
+    "Cashfree": {
+      "hosted-redirect": "available", "dropin-iframe": "available", "native-api": "available", "qr": "available",
+      "domestic-credit": "available", "domestic-debit": "available", "international-cards": "available",
+      "upi-collect": "available", "upi-intent": "available", "upi-autopay": "available",
+      "netbanking": "available", "wallets": "available", "bnpl": "available", "cod": "available",
+      "pre-auth-capture": "available", "void-cancel": "available",
+      "refund-full-partial": "available", "instant-refund": "available",
+      "network-tokenization": "available", "card-on-file": "available",
+      "3ds-2": "available", "risk-scoring": "available", "chargeback-portal": "available",
+      "settlement-cadence": "available", "instant-settlement": "available", "reconciliation": "available",
+      "webhooks": "available", "status-page": "available"
+    },
+    "CCAvenue": {
+      "hosted-redirect": "available", "dropin-iframe": "available",
+      "domestic-credit": "available", "domestic-debit": "available", "international-cards": "available",
+      "upi-collect": "available", "upi-intent": "available",
+      "netbanking": "available", "wallets": "available", "bnpl": "available",
+      "void-cancel": "available", "refund-full-partial": "available",
+      "3ds-2": "available", "risk-scoring": "available",
+      "settlement-cadence": "available", "reconciliation": "available",
+      "webhooks": "available"
+    },
+    "PayU Money": {
+      "hosted-redirect": "available", "dropin-iframe": "available", "native-api": "available",
+      "domestic-credit": "available", "domestic-debit": "available", "international-cards": "available",
+      "upi-collect": "available", "upi-intent": "available", "upi-autopay": "available",
+      "netbanking": "available", "wallets": "available", "bnpl": "available",
+      "pre-auth-capture": "available", "void-cancel": "available",
+      "refund-full-partial": "available", "instant-refund": "available",
+      "network-tokenization": "available",
+      "3ds-2": "available", "risk-scoring": "available", "chargeback-portal": "available",
+      "settlement-cadence": "available", "reconciliation": "available",
+      "webhooks": "available", "status-page": "available"
+    },
+    "Pine Labs": {
+      "qr": "available",
+      "domestic-credit": "available", "domestic-debit": "available",
+      "upi-collect": "available", "upi-intent": "available",
+      "wallets": "available", "bnpl": "available",
+      "pre-auth-capture": "available", "void-cancel": "available",
+      "refund-full-partial": "available",
+      "settlement-cadence": "available", "reconciliation": "available",
+      "webhooks": "available"
+    },
+    "Simpl": {
+      "dropin-iframe": "available",
+      "bnpl": "available",
+      "refund-full-partial": "available",
+      "webhooks": "available"
+    }
   },
   "roadmapGateways": {
-    "_comment": "Roadmap gateways (PRD Q1) — gateways Fynd plans to integrate but hasn't yet. Rendered in a visually separated band below the main matrix. Populate with the roadmap PG list from Animesh.",
-    "_example": {
-      "hosted-redirect": "available",
-      "domestic-credit": "available"
-    }
+    "_comment": "Roadmap gateways (PRD Q1). Empty until Animesh provides the list. Add entries here in the same shape as `gateways` above to render the visually separated roadmap band below the main matrix."
   },
   "orchestration": {
     "_comment": "Separate panel below the matrix per PRD F8. Status: 'live' | 'beta' | 'planned'.",
