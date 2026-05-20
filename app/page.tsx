@@ -55,11 +55,18 @@ export default async function Home({
               <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">
                 GCP Console &rarr; APIs &amp; Services &rarr; Credentials
               </a>
-              . Redirect URI:{' '}
-              <code>
-                {process.env.NEXTAUTH_URL ?? 'http://localhost:3000'}/api/auth/callback/google
-              </code>
+              . Add <em>both</em> redirect URIs so prod and local dev work:
             </p>
+            <ul className="signin-redirect-list">
+              <li>
+                <span className="redirect-label">Production</span>
+                <code>https://payments-capability-dashboard.vercel.app/api/auth/callback/google</code>
+              </li>
+              <li>
+                <span className="redirect-label">Local dev</span>
+                <code>http://localhost:3000/api/auth/callback/google</code>
+              </li>
+            </ul>
           </div>
         ) : (
           <>
