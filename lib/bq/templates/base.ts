@@ -103,7 +103,9 @@ export function buildSliceCTE(
     WITH latest_status AS (
       SELECT
         transaction_id,
-        id AS status_mapper_id,
+        -- transaction_status.status is the numeric FK that references
+        -- aggregator_order_status_mapper.id. Per V2 query shape.
+        status AS status_code,
         ROW_NUMBER() OVER (PARTITION BY transaction_id ORDER BY id DESC) AS rn
       FROM ${Z}.dbe_transaction_status
       WHERE DATE(created_on) BETWEEN @from AND @to
@@ -134,7 +136,7 @@ export function buildSliceCTE(
       LEFT JOIN latest_status ls
         ON ls.transaction_id = t.id AND ls.rn = 1
       LEFT JOIN ${Z}.dbe_aggregator_order_status_mapper agg_map
-        ON agg_map.id = ls.status_mapper_id
+        ON agg_map.id = ls.status_code
       LEFT JOIN ${Z}.dbe_aggregator agg
         ON agg.aggregator_id = t.aggregator_id
       LEFT JOIN ${Z}.dbe_merchant_profile mp
