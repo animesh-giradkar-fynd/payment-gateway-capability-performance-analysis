@@ -1,8 +1,8 @@
-import Image from 'next/image';
 import { getServerSession } from 'next-auth/next';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
 import { SignInButton } from '@/components/SignInButton';
+import { FyndLogo } from '@/components/FyndLogo';
 
 /**
  * Sign-in page. Detects misconfigured OAuth server-side and shows an explicit
@@ -34,7 +34,7 @@ export default async function Home({
     <main className="signin-page">
       <div className="signin-card">
         <div className="signin-logo">
-          <Image src="/fynd-logo.svg" alt="Fynd" width={88} height={26} priority />
+          <FyndLogo size={56} />
         </div>
 
         <h1>Payments Capability</h1>
