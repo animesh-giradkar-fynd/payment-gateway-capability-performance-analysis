@@ -66,8 +66,14 @@ export function buildSliceCTE(
   // omitting the predicate entirely is the "no filter" path.
   const extraPredicates: string[] = [];
 
+  // NOTE on the CAST(... AS INT64) wrappers below — every numeric-ID column in Zenith
+  // (dbe_transaction.aggregator_id, dbe_transaction.merchant_profile_id,
+  // dbe_merchant.merchant_id) is BIGNUMERIC, but the wire params are INT64 arrays. Without
+  // the cast, BQ raises "No matching signature for operator IN UNNEST" and every panel
+  // 500s the moment a PG / Profile / Seller filter is selected. Cast at the column side
+  // keeps the param contract clean (callers still pass plain numbers).
   if (filters.aggregatorIds?.length) {
-    extraPredicates.push('t.aggregator_id IN UNNEST(@aggregatorIds)');
+    extraPredicates.push('CAST(t.aggregator_id AS INT64) IN UNNEST(@aggregatorIds)');
     params.aggregatorIds = filters.aggregatorIds;
     types.aggregatorIds = ['INT64'];
   }
@@ -77,14 +83,14 @@ export function buildSliceCTE(
     types.paymentModes = ['STRING'];
   }
   if (filters.merchantProfileIds?.length) {
-    extraPredicates.push('t.merchant_profile_id IN UNNEST(@merchantProfileIds)');
+    extraPredicates.push('CAST(t.merchant_profile_id AS INT64) IN UNNEST(@merchantProfileIds)');
     params.merchantProfileIds = filters.merchantProfileIds;
     types.merchantProfileIds = ['INT64'];
   }
   if (filters.sellerIds?.length) {
     // FC Seller filter — sellerIds are merchant.id (the brand), so we filter via the
     // merchant_profile → merchant join chain. mp.merchant_id is the FK on merchant_profile.
-    extraPredicates.push('mp.merchant_id IN UNNEST(@sellerIds)');
+    extraPredicates.push('CAST(mp.merchant_id AS INT64) IN UNNEST(@sellerIds)');
     params.sellerIds = filters.sellerIds;
     types.sellerIds = ['INT64'];
   }

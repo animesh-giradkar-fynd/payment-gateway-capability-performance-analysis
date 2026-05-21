@@ -12,6 +12,7 @@ type GatewayMixRow = {
   aggregator_name: string;
   transaction_count: number;
   successful_count: number;
+  failed_count: number;
   share_pct: number;
 };
 
@@ -45,10 +46,18 @@ export function GatewayLeaderboard() {
   const errMsg = error ? String((error as Error).message ?? error) : null;
   const rows = (resp?.data ?? [])
     .filter((r) => r.transaction_count > 0)
-    .map((r) => ({
-      ...r,
-      success_rate_pct: r.transaction_count > 0 ? (r.successful_count / r.transaction_count) * 100 : 0,
-    }))
+    .map((r) => {
+      // Success rate is computed over TERMINAL-STATE rows only (success + failed),
+      // matching the metrics-card definition. Pending rows (Razorpay `authorized`
+      // awaiting capture, etc.) are not failures and shouldn't deflate the rate.
+      const terminal = r.successful_count + r.failed_count;
+      const pending_count = Math.max(0, r.transaction_count - terminal);
+      return {
+        ...r,
+        pending_count,
+        success_rate_pct: terminal > 0 ? (r.successful_count / terminal) * 100 : 0,
+      };
+    })
     .sort((a, b) => b.transaction_count - a.transaction_count)
     .slice(0, 10);
 
@@ -92,11 +101,22 @@ export function GatewayLeaderboard() {
                 content={({ active, payload }) => {
                   if (!active || !payload?.length) return null;
                   const r = payload[0].payload as typeof rows[number];
+                  const terminal = r.successful_count + r.failed_count;
                   return (
-                    <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '8px 12px', fontSize: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
-                      <div style={{ fontWeight: 600, marginBottom: 4 }}>{r.aggregator_name}</div>
+                    <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '8px 12px', fontSize: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', minWidth: 220 }}>
+                      <div style={{ fontWeight: 600, marginBottom: 6 }}>{r.aggregator_name}</div>
                       <div>Volume: {fmtInt.format(r.transaction_count)} ({r.share_pct.toFixed(1)}%)</div>
-                      <div>Success rate: {r.success_rate_pct.toFixed(1)}%</div>
+                      <div style={{ marginTop: 4 }}>
+                        Success rate: <strong>{r.success_rate_pct.toFixed(1)}%</strong>
+                        <span style={{ color: '#6b7280' }}> ({fmtInt.format(r.successful_count)} / {fmtInt.format(terminal)} terminal)</span>
+                      </div>
+                      <div style={{ color: '#6b7280' }}>Failed: {fmtInt.format(r.failed_count)}</div>
+                      {r.pending_count > 0 ? (
+                        <div style={{ color: '#6b7280' }}>
+                          Pending: {fmtInt.format(r.pending_count)}
+                          <span style={{ marginLeft: 4 }}>(authorized, awaiting capture)</span>
+                        </div>
+                      ) : null}
                     </div>
                   );
                 }}
