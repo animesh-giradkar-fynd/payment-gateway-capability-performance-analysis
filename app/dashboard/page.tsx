@@ -19,7 +19,7 @@ export default function Dashboard() {
     <main className="dashboard">
       <header className="topbar">
         <div className="topbar-brand">
-          <FyndLogo size={36} />
+          <FyndLogo size={36} iconOnly />
           <div className="topbar-divider" aria-hidden />
           <div className="topbar-title">
             <h1>Payments Capability</h1>
