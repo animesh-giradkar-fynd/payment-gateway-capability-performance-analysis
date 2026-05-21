@@ -50,8 +50,8 @@ export function buildSliceCTE(
     to: filters.dateRange.to,
   };
   const types: Record<string, string | string[]> = {
-    from: 'DATE',
-    to: 'DATE',
+    from: 'STRING',
+    to: 'STRING',
   };
 
   // Conditional filter predicates — only emitted when the array is non-empty.
@@ -108,7 +108,7 @@ export function buildSliceCTE(
         status AS status_code,
         ROW_NUMBER() OVER (PARTITION BY transaction_id ORDER BY id DESC) AS rn
       FROM ${Z}.dbe_transaction_status
-      WHERE DATE(created_on) BETWEEN @from AND @to
+      WHERE DATE(created_on) BETWEEN DATE(@from) AND DATE(@to)
     ),
     joined AS (
       SELECT
@@ -144,7 +144,7 @@ export function buildSliceCTE(
       LEFT JOIN ${Z}.dbe_merchant m
         ON m.id = mp.merchant_id
       ${ordersJoinSql}
-      WHERE DATE(t.created_on) BETWEEN @from AND @to
+      WHERE DATE(t.created_on) BETWEEN DATE(@from) AND DATE(@to)
         AND t.is_active = TRUE
         ${extraClause}
     ),
