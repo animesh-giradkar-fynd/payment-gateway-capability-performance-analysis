@@ -113,7 +113,7 @@ export function FilterBar() {
             const checked = filters.aggregatorIds?.includes(a.aggregator_id) ?? false;
             return (
               <CheckRow
-                key={a.aggregator_id}
+                key={`pg-${a.aggregator_id}-${a.aggregator_name}`}
                 checked={checked}
                 onToggle={(next) => {
                   const cur = new Set(filters.aggregatorIds ?? []);

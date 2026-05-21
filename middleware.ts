@@ -19,6 +19,16 @@ export function middleware(req: NextRequest) {
   const expectedUser = process.env.DASHBOARD_USERNAME;
   const expectedPass = process.env.DASHBOARD_PASSWORD;
 
+  // Local-dev bypass: when NODE_ENV is 'development' (i.e. `pnpm dev`, never prod),
+  // skip basic auth. Lets developers iterate without re-entering the dialog every
+  // hard refresh, and lets preview tooling inspect pages without credential-in-URL
+  // gymnastics. Production deploys (NODE_ENV='production') always enforce auth.
+  if (process.env.NODE_ENV === 'development') {
+    const res = NextResponse.next();
+    res.headers.set('x-auth-user', expectedUser ?? 'dev-bypass');
+    return res;
+  }
+
   // Misconfigured: allow through with a header so the page can warn — better than
   // silently 401'ing forever when the operator hasn't set the env vars yet.
   if (!expectedUser || !expectedPass) {

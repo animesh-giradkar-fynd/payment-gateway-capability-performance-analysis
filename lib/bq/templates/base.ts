@@ -110,6 +110,18 @@ export function buildSliceCTE(
       FROM ${Z}.dbe_transaction_status
       WHERE DATE(created_on) BETWEEN DATE(@from) AND DATE(@to)
     ),
+    -- dbe_aggregator has duplicate aggregator_id rows (~20 IDs including Razorpay
+    -- and Jioonepay) — joining directly would fan out counts 2×. Dedupe to the
+    -- most-recently-modified name per id.
+    aggregator_dedup AS (
+      SELECT aggregator_id, name
+      FROM (
+        SELECT aggregator_id, name,
+               ROW_NUMBER() OVER (PARTITION BY aggregator_id ORDER BY modified_on DESC NULLS LAST) AS rn
+        FROM ${Z}.dbe_aggregator
+      )
+      WHERE rn = 1
+    ),
     joined AS (
       SELECT
         t.id AS transaction_id,
@@ -137,7 +149,7 @@ export function buildSliceCTE(
         ON ls.transaction_id = t.id AND ls.rn = 1
       LEFT JOIN ${Z}.dbe_aggregator_order_status_mapper agg_map
         ON agg_map.id = ls.status_code
-      LEFT JOIN ${Z}.dbe_aggregator agg
+      LEFT JOIN aggregator_dedup agg
         ON agg.aggregator_id = t.aggregator_id
       LEFT JOIN ${Z}.dbe_merchant_profile mp
         ON mp.id = t.merchant_profile_id

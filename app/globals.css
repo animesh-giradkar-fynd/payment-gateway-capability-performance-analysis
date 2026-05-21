@@ -368,7 +368,7 @@ body {
 /* === Panel grid === */
 .panel-grid-2 {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--nov-spacing-4);
   margin-bottom: var(--nov-spacing-4);
 }
@@ -454,7 +454,7 @@ body {
 }
 .refunds-summary {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--nov-spacing-3);
 }
 .refunds-kpi {
@@ -514,7 +514,7 @@ body {
 /* === Refund posture — 4 KPI tiles + footnote === */
 .refund-posture-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--nov-spacing-3);
 }
 .refund-posture-tile {
@@ -740,7 +740,7 @@ body {
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--nov-spacing-3);
 }
 @media (max-width: 900px) { .orchestration-list { grid-template-columns: 1fr; } }

@@ -17,7 +17,18 @@ export type FilterOptionsRow = {
  */
 export function filterOptionsQuery(): BQQuery {
   const query = `
-    WITH recent AS (
+    WITH
+    -- dbe_aggregator has duplicate aggregator_id rows; dedupe to one canonical name
+    -- per id so the dropdown doesn't show "Razorpay" twice and counts don't double.
+    aggregator_dedup AS (
+      SELECT aggregator_id, name FROM (
+        SELECT aggregator_id, name,
+               ROW_NUMBER() OVER (PARTITION BY aggregator_id ORDER BY modified_on DESC NULLS LAST) AS rn
+        FROM ${Z}.dbe_aggregator
+      )
+      WHERE rn = 1
+    ),
+    recent AS (
       SELECT
         t.aggregator_id,
         agg.name AS aggregator_name,
@@ -28,7 +39,7 @@ export function filterOptionsQuery(): BQQuery {
         m.name AS seller_name,
         zo.ordering_source
       FROM ${Z}.dbe_transaction t
-      LEFT JOIN ${Z}.dbe_aggregator agg ON agg.aggregator_id = t.aggregator_id
+      LEFT JOIN aggregator_dedup agg ON agg.aggregator_id = t.aggregator_id
       LEFT JOIN ${Z}.dbe_merchant_profile mp ON mp.id = t.merchant_profile_id
       LEFT JOIN ${Z}.dbe_merchant m ON m.id = mp.merchant_id
       LEFT JOIN ${Z}.dbe_orders zo ON zo.order_id = t.merchant_order_id
