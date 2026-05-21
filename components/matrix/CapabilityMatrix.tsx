@@ -23,6 +23,14 @@ const STATE_GLYPH: Record<CellState, string> = {
   'not-offered': '',
 };
 
+/**
+ * Per-gateway header annotations — shown as a tiny grey caption under the PG name.
+ * Use sparingly; only when a PG's role differs from "customer-facing payment gateway".
+ */
+const GATEWAY_SUBTITLE: Record<string, string> = {
+  Cashfree: 'Refund-settlement only (COD)',
+};
+
 export function CapabilityMatrix() {
   const { data: resp, error, isLoading } = useSWR<{ data: CapabilitiesData }>(
     '/api/capability-matrix',
@@ -120,7 +128,10 @@ function MatrixTable({
             <th className="matrix-row-head matrix-sticky-col">Capability</th>
             {gateways.map((g) => (
               <th key={g} className="matrix-col-head" title={g}>
-                {g}
+                <span className="matrix-col-name">{g}</span>
+                {GATEWAY_SUBTITLE[g] ? (
+                  <span className="matrix-col-note">{GATEWAY_SUBTITLE[g]}</span>
+                ) : null}
               </th>
             ))}
           </tr>

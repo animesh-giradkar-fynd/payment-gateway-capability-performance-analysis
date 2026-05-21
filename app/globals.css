@@ -794,6 +794,20 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.matrix-col-name {
+  display: block;
+}
+/* Per-gateway header annotation (e.g. Cashfree's "Refund-settlement only" caption). */
+.matrix-col-note {
+  display: block;
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--nov-color-text-secondary, #6b7280);
+  white-space: normal;
+  line-height: 1.25;
+  max-width: 140px;
+}
 .matrix-row-label {
   text-align: left;
   font-weight: 400;
