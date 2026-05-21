@@ -551,6 +551,63 @@ body {
   font-style: italic;
 }
 
+/* === Regional heatmap === */
+.regional-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--nov-spacing-3);
+  margin-bottom: var(--nov-spacing-3);
+  padding-bottom: var(--nov-spacing-3);
+  border-bottom: 1px solid var(--nov-color-border-neutral-4);
+}
+.regional-coverage {
+  margin-left: auto;
+  font-size: 11px;
+}
+.regional-list {
+  margin-top: var(--nov-spacing-3);
+  padding-top: var(--nov-spacing-3);
+  border-top: 1px solid var(--nov-color-border-neutral-4);
+}
+.regional-list-title {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--nov-color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: var(--nov-spacing-2);
+}
+.regional-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px var(--nov-spacing-3);
+}
+.regional-list li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--nov-color-border-neutral-4);
+}
+.regional-list li:last-child { border-bottom: none; }
+.regional-list li > span:last-child {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.regional-note {
+  margin-top: var(--nov-spacing-3);
+  font-size: 11px;
+}
+.regional-note code {
+  background: rgba(0,0,0,0.04);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 10px;
+}
+
 /* === Capability matrix === */
 .matrix-section {
   background: var(--nov-color-bg-surface);

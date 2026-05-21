@@ -6,6 +6,7 @@ import { FailuresPanel } from '@/components/panels/FailuresPanel';
 import { RefundPosture } from '@/components/panels/RefundPosture';
 import { GatewayLeaderboard } from '@/components/panels/GatewayLeaderboard';
 import { GeographicPanel } from '@/components/panels/GeographicPanel';
+import { RegionalHeatmap } from '@/components/panels/RegionalHeatmap';
 import { CapabilityMatrix } from '@/components/matrix/CapabilityMatrix';
 import { OrchestrationPanel } from '@/components/matrix/OrchestrationPanel';
 import { FilterBar } from '@/components/filters/FilterBar';
@@ -46,6 +47,10 @@ export default function Dashboard() {
       <section className="panel-grid-2">
         <FailuresPanel />
         <RefundPosture />
+      </section>
+
+      <section className="metric-row">
+        <RegionalHeatmap />
       </section>
 
       <section className="metric-row">
