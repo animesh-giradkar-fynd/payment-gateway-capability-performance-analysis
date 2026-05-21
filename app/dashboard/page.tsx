@@ -1,5 +1,4 @@
 import { Suspense } from 'react';
-import { headers } from 'next/headers';
 import { MetricCards } from '@/components/panels/MetricCards';
 import { GatewayMix } from '@/components/panels/GatewayMix';
 import { MopMix } from '@/components/panels/MopMix';
@@ -15,12 +14,6 @@ import { FyndLogo } from '@/components/FyndLogo';
 export const dynamic = 'force-dynamic';
 
 export default function Dashboard() {
-  // middleware.ts authenticated the request and forwarded the user via x-auth-user.
-  // Falls back to 'guest' if the header is missing (only happens when env vars
-  // aren't set, which middleware surfaces via x-auth-warning).
-  const user = headers().get('x-auth-user') ?? 'guest';
-  const authWarning = headers().get('x-auth-warning');
-
   return (
     <main className="dashboard">
       <header className="topbar">
@@ -31,16 +24,7 @@ export default function Dashboard() {
             <span className="subtitle">Ecosystem health · 24h refresh</span>
           </div>
         </div>
-        <div className="user-menu">
-          <span className="user-email">Signed in as {user}</span>
-        </div>
       </header>
-
-      {authWarning ? (
-        <div className="auth-warning">
-          ⚠ {authWarning} — anyone can reach this page until you configure them.
-        </div>
-      ) : null}
 
       <Suspense fallback={<div className="filter-bar-skeleton">Loading filters…</div>}>
         <FilterBar />
