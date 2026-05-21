@@ -69,6 +69,7 @@ export function FailuresPanel() {
 
   // Bucket raw codes into friendly categories
   const totals: Record<FailureCategory, number> = {
+    'Cancelled @ 2h (Fynd)': 0,
     'Authentication failed': 0, 'Issuer decline': 0, 'Gateway error': 0,
     'User abandoned': 0, 'Verification failed': 0, 'Network / timeout': 0,
     'Refund / void issue': 0, 'Other': 0,
@@ -170,7 +171,7 @@ export function FailuresPanel() {
           </ResponsiveContainer>
           {unclassifiedCount > 0 ? (
             <p className="muted" style={{ fontSize: 11, marginTop: 8 }}>
-              Percentages are share of classified failures. {fmtInt.format(unclassifiedCount)} unclassified failures hidden (generic <code>FAILED</code> / <code>PENDING</code> codes with no actionable reason).
+              Percentages are share of classified failures across all modes (PG declines + Fynd 2h cancels). {fmtInt.format(unclassifiedCount)} generic-<code>FAILED</code> rows hidden — these have no actionable reason at the raw level.
             </p>
           ) : null}
         </div>

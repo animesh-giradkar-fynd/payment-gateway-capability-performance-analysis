@@ -129,6 +129,7 @@ export const REFUND_METHOD_DESCRIPTION: Record<RefundMethod, string> = {
  * codes that aggregators rarely surface; we map to the closest available category.
  * ============================================================================ */
 export type FailureCategory =
+  | 'Cancelled @ 2h (Fynd)'   // Fynd's internal 2h-timeout cancel — typically the largest bucket
   | 'Authentication failed'   // 3DS / OTP / auth failures
   | 'Issuer decline'           // generic decline by issuer
   | 'Gateway error'            // PG-side error
@@ -139,6 +140,9 @@ export type FailureCategory =
   | 'Other';
 
 const FAILURE_MAP: Record<string, FailureCategory> = {
+  // Fynd 2h-timeout cancel — synthetic reason emitted by failuresQuery for
+  // unified_status='pending' rows.
+  '__FYND_2H_TIMEOUT__':    'Cancelled @ 2h (Fynd)',
   // Authentication failures (3DS, OTP)
   'AUTHENTICATION_FAILED':  'Authentication failed',
   'AUTHORIZATION_FAILED':   'Authentication failed',
@@ -170,6 +174,7 @@ export function failureCategoryFor(code: string | null | undefined): FailureCate
 }
 
 export const FAILURE_CATEGORY_ORDER: FailureCategory[] = [
+  'Cancelled @ 2h (Fynd)',
   'Authentication failed', 'Issuer decline', 'Gateway error',
   'User abandoned', 'Verification failed', 'Network / timeout',
   'Refund / void issue', 'Other',

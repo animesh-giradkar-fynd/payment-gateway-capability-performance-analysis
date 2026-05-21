@@ -48,9 +48,17 @@ export function GatewayLeaderboard() {
   const rows = (resp?.data ?? [])
     .filter((r) => r.transaction_count > 0)
     .map((r) => {
-      // Per Fynd's 2-hour cancel rule, pending rows are de-facto failures. SR uses
-      // the full slice denominator. `uncategorized` covers any rows that aren't
-      // success / failed / cancelled (e.g. status row missing entirely).
+      // Leaderboard SR is PG-vs-PG comparison: success / (success + failed). The
+      // 2h-cancel bucket is Fynd's operational responsibility (capture delay,
+      // webhook gaps) — not the PG's decision — so excluding it keeps the
+      // comparison fair across PGs with different capture models. Juspay does
+      // synchronous charge+capture and can't generate 2h cancels by design;
+      // Razorpay uses authorize+capture which can. Counting Fynd-side cancels
+      // against Razorpay would penalize an architecture choice, not performance.
+      //
+      // (KPI card "Success rate" uses success/total — that's the Fynd-ecosystem
+      // view where 2h cancels DO count because the customer experienced failure.)
+      const terminal = r.successful_count + r.failed_count;
       const uncategorized_count = Math.max(
         0,
         r.transaction_count - r.successful_count - r.failed_count - r.cancelled_count,
@@ -58,9 +66,7 @@ export function GatewayLeaderboard() {
       return {
         ...r,
         uncategorized_count,
-        success_rate_pct: r.transaction_count > 0
-          ? (r.successful_count / r.transaction_count) * 100
-          : 0,
+        success_rate_pct: terminal > 0 ? (r.successful_count / terminal) * 100 : 0,
       };
     })
     .sort((a, b) => b.transaction_count - a.transaction_count)
@@ -69,7 +75,7 @@ export function GatewayLeaderboard() {
   const isEmpty = !isLoading && !errMsg && rows.length === 0;
 
   return (
-    <Panel title="Gateway leaderboard — success rate × volume share" loading={isLoading} error={errMsg}>
+    <Panel title="Gateway leaderboard — PG success rate × volume share" loading={isLoading} error={errMsg}>
       {isEmpty ? (
         <div className="panel-empty">No gateways in this slice.</div>
       ) : (
@@ -106,18 +112,20 @@ export function GatewayLeaderboard() {
                 content={({ active, payload }) => {
                   if (!active || !payload?.length) return null;
                   const r = payload[0].payload as typeof rows[number];
+                  const terminal = r.successful_count + r.failed_count;
                   return (
-                    <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '8px 12px', fontSize: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', minWidth: 240 }}>
+                    <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '8px 12px', fontSize: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', minWidth: 260 }}>
                       <div style={{ fontWeight: 600, marginBottom: 6 }}>{r.aggregator_name}</div>
                       <div>Volume: {fmtInt.format(r.transaction_count)} ({r.share_pct.toFixed(1)}%)</div>
                       <div style={{ marginTop: 4 }}>
-                        Success rate: <strong>{r.success_rate_pct.toFixed(1)}%</strong>
-                        <span style={{ color: '#6b7280' }}> ({fmtInt.format(r.successful_count)} / {fmtInt.format(r.transaction_count)})</span>
+                        PG success rate: <strong>{r.success_rate_pct.toFixed(1)}%</strong>
+                        <span style={{ color: '#6b7280' }}> ({fmtInt.format(r.successful_count)} / {fmtInt.format(terminal)} PG-decided)</span>
                       </div>
                       <div style={{ color: '#6b7280', marginTop: 4 }}>Failed (PG declined): {fmtInt.format(r.failed_count)}</div>
                       {r.cancelled_count > 0 ? (
                         <div style={{ color: '#6b7280' }}>
                           Cancelled at Fynd (2h timeout): {fmtInt.format(r.cancelled_count)}
+                          <span style={{ marginLeft: 4, fontSize: 10 }}>(not in SR — Fynd-side)</span>
                         </div>
                       ) : null}
                       {r.uncategorized_count > 0 ? (
