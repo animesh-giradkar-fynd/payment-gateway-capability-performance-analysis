@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { MetricCards } from '@/components/panels/MetricCards';
 import { GatewayMix } from '@/components/panels/GatewayMix';
 import { MopMix } from '@/components/panels/MopMix';
+import { OfflineMopMix } from '@/components/panels/OfflineMopMix';
 import { FailuresPanel } from '@/components/panels/FailuresPanel';
 import { RefundPosture } from '@/components/panels/RefundPosture';
 import { GatewayLeaderboard } from '@/components/panels/GatewayLeaderboard';
@@ -42,6 +43,10 @@ export default function Dashboard() {
       <section className="panel-grid-2">
         <GatewayMix />
         <MopMix />
+      </section>
+
+      <section className="metric-row">
+        <OfflineMopMix />
       </section>
 
       <section className="panel-grid-2">

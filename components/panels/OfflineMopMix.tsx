@@ -4,7 +4,10 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recha
 import { Panel } from '@/components/ui/Panel';
 import { useFilterStore } from '@/lib/store/filters';
 import {
-  mopGroupFor, MOP_GROUP_ORDER, MOP_GROUP_COLOR, type MopGroup,
+  offlineMopGroupFor,
+  OFFLINE_MOP_GROUP_ORDER,
+  OFFLINE_MOP_GROUP_COLOR,
+  type OfflineMopGroup,
 } from '@/lib/normalizations';
 import type { DashboardFilters } from '@/lib/filters';
 
@@ -29,14 +32,15 @@ async function postFetcher([url, body]: [string, DashboardFilters]) {
 }
 
 /**
- * MOP mix — share of transactions per normalized group (UPI / Cards / Wallets /
- * Net banking / BNPL-EMI / COD / Tap-to-pay / Other). Raw payment_mode codes
- * collapse via lib/normalizations.ts → mopGroupFor.
+ * Offline MOP mix — Fynd-managed offline payments only (COD, Cash at store, UPI at store).
+ * Driven by /api/mop-mix-offline which runs the Fynd-only slice. Stays semantically separate
+ * from the Online MopMix panel so leadership doesn't conflate PG-driven and operator-driven
+ * volume.
  */
-export function MopMix() {
+export function OfflineMopMix() {
   const filters = useFilterStore((s) => s.filters);
   const { data: resp, error, isLoading } = useSWR<{ data: MopMixRow[] }>(
-    ['/api/mop-mix', filters],
+    ['/api/mop-mix-offline', filters],
     postFetcher,
     { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
   );
@@ -44,32 +48,35 @@ export function MopMix() {
   const errMsg = error ? String((error as Error).message ?? error) : null;
   const rawRows = resp?.data ?? [];
 
-  // Roll up raw payment_modes into the 7 named buckets
-  const totals: Record<MopGroup, number> = {
-    UPI: 0, Cards: 0, Wallets: 0, 'Net banking': 0,
-    'BNPL/EMI': 0, COD: 0, 'Tap-to-pay': 0, Other: 0,
+  // Roll up raw payment_modes into the 4 offline buckets
+  const totals: Record<OfflineMopGroup, number> = {
+    COD: 0, 'Cash at store': 0, 'UPI at store': 0, Other: 0,
   };
   let total = 0;
   for (const r of rawRows) {
-    totals[mopGroupFor(r.payment_mode)] += r.transaction_count;
+    totals[offlineMopGroupFor(r.payment_mode)] += r.transaction_count;
     total += r.transaction_count;
   }
 
-  const data = MOP_GROUP_ORDER
+  const data = OFFLINE_MOP_GROUP_ORDER
     .map((g) => ({
       name: g,
       transaction_count: totals[g],
       share_pct: total > 0 ? (totals[g] / total) * 100 : 0,
-      fill: MOP_GROUP_COLOR[g],
+      fill: OFFLINE_MOP_GROUP_COLOR[g],
     }))
     .filter((d) => d.transaction_count > 0);
 
   const isEmpty = !isLoading && !errMsg && data.length === 0;
 
   return (
-    <Panel title="Online payment method mix" loading={isLoading} error={errMsg}>
+    <Panel
+      title="Offline payment method mix (Fynd-managed)"
+      loading={isLoading}
+      error={errMsg}
+    >
       {isEmpty ? (
-        <div className="panel-empty">No transactions in this slice.</div>
+        <div className="panel-empty">No offline transactions in the selected window.</div>
       ) : (
         <div style={{ width: '100%', height: 280 }}>
           <ResponsiveContainer>

@@ -16,6 +16,13 @@ export type SliceOptions = {
    * per architecture.md / D007). If false / undefined, EXCLUDES refunds (telemetry query family).
    */
   refundOnly?: boolean;
+  /**
+   * If true, includes the internal `Fynd` aggregator in the slice. Used by the Offline MOP
+   * panel (COD / Cash-at-store / UPI-at-store) which lives entirely under the Fynd handler.
+   * All other exclusions (test/UAT/dev/sandbox + the other internal handlers like CreditNote)
+   * still apply.
+   */
+  includeOfflineHandler?: boolean;
 };
 
 /**
@@ -99,6 +106,14 @@ export function buildSliceCTE(
     ? `AND IFNULL(transaction_type, '') = 'REFUND'`
     : `AND IFNULL(transaction_type, '') <> 'REFUND'`;
 
+  // Aggregator exclusion list — `fynd` is dropped when includeOfflineHandler=true so the
+  // Offline MOP panel can read the Fynd-managed slice (COD / Cash-at-store / UPI-at-store).
+  // Every other handler stays excluded regardless of the flag.
+  const internalHandlers = options.includeOfflineHandler
+    ? ['creditnote', 'store credits', 'credit', 'openapi', 'payment-fahim', 'asmakhanextprod']
+    : ['fynd', 'creditnote', 'store credits', 'credit', 'openapi', 'payment-fahim', 'asmakhanextprod'];
+  const internalHandlersSqlList = internalHandlers.map((n) => `'${n}'`).join(', ');
+
   const sql = `
     WITH latest_status AS (
       SELECT
@@ -111,13 +126,17 @@ export function buildSliceCTE(
       WHERE DATE(created_on) BETWEEN DATE(@from) AND DATE(@to)
     ),
     -- dbe_aggregator has duplicate aggregator_id rows (~20 IDs including Razorpay
-    -- and Jioonepay) — joining directly would fan out counts 2×. Dedupe to the
-    -- most-recently-modified name per id.
+    -- and Jioonepay) — joining directly would fan out counts 2×. Dedupe to one
+    -- canonical name per id, preferring longer names so placeholder single-char
+    -- rows (e.g. 'd' for Razorpay Magic Checkout id=195) lose to the real label.
     aggregator_dedup AS (
       SELECT aggregator_id, name
       FROM (
         SELECT aggregator_id, name,
-               ROW_NUMBER() OVER (PARTITION BY aggregator_id ORDER BY modified_on DESC NULLS LAST) AS rn
+               ROW_NUMBER() OVER (
+                 PARTITION BY aggregator_id
+                 ORDER BY LENGTH(name) DESC NULLS LAST, modified_on DESC NULLS LAST
+               ) AS rn
         FROM ${Z}.dbe_aggregator
       )
       WHERE rn = 1
@@ -164,18 +183,16 @@ export function buildSliceCTE(
       SELECT *
       FROM joined
       WHERE LOWER(IFNULL(brand_name, '')) NOT LIKE '%test%'
-        -- Aggregator exclusion list. Keeps the PG panels comparing real,
-        -- customer-facing payment gateways (Razorpay/Juspay/Cashfree/etc.) only.
+        -- Aggregator exclusion list. Built from the internalHandlers array above so
+        -- the Offline MOP panel can opt back into 'fynd' via includeOfflineHandler=true.
         --   - 'fynd' is Fynd's internal offline handler (~91% COD/Cash/UPI-at-store).
-        --     The offline volume still shows up correctly in MOP Mix via COD/Cash buckets.
+        --     Excluded by default so PG panels compare only customer-facing gateways
+        --     (Razorpay/Juspay/Cashfree/etc.); included by the Offline MOP slice.
         --   - 'creditnote', 'store credits', 'credit' are internal wallet/adjustment paths.
-        --   - 'openapi' is the sandbox/test adapter (was the only excluded one originally).
+        --   - 'openapi' is the sandbox/test adapter.
         --   - 'payment-fahim', 'asmakhanextprod' are dev/personal aggregators.
-        -- Patterns catch generic test/uat/dev/sandbox naming.
-        AND LOWER(IFNULL(aggregator_name, '')) NOT IN (
-          'fynd', 'creditnote', 'store credits', 'credit', 'openapi',
-          'payment-fahim', 'asmakhanextprod'
-        )
+        -- Patterns below catch generic test/uat/dev/sandbox naming.
+        AND LOWER(IFNULL(aggregator_name, '')) NOT IN (${internalHandlersSqlList})
         AND LOWER(IFNULL(aggregator_name, '')) NOT LIKE '%test%'
         AND LOWER(IFNULL(aggregator_name, '')) NOT LIKE '%uat%'
         AND LOWER(IFNULL(aggregator_name, '')) NOT LIKE '%dev%'

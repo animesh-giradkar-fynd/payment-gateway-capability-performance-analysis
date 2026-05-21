@@ -20,10 +20,16 @@ export function filterOptionsQuery(): BQQuery {
     WITH
     -- dbe_aggregator has duplicate aggregator_id rows; dedupe to one canonical name
     -- per id so the dropdown doesn't show "Razorpay" twice and counts don't double.
+    -- ORDER BY LENGTH(name) DESC first so placeholder single-char rows (e.g. 'd' for
+    -- Razorpay Magic Checkout id=195) lose to the real label, then modified_on as
+    -- tiebreaker among equally-long names. Kept in lockstep with base.ts.
     aggregator_dedup AS (
       SELECT aggregator_id, name FROM (
         SELECT aggregator_id, name,
-               ROW_NUMBER() OVER (PARTITION BY aggregator_id ORDER BY modified_on DESC NULLS LAST) AS rn
+               ROW_NUMBER() OVER (
+                 PARTITION BY aggregator_id
+                 ORDER BY LENGTH(name) DESC NULLS LAST, modified_on DESC NULLS LAST
+               ) AS rn
         FROM ${Z}.dbe_aggregator
       )
       WHERE rn = 1

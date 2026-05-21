@@ -8,6 +8,16 @@ export type MopMixRow = {
   share_pct: number;
 };
 
+export type MopMixOptions = {
+  /**
+   * Which slice family this query runs against:
+   *   - 'online' (default): standard PG slice (Fynd excluded). Drives the Online MOP panel.
+   *   - 'offline': Fynd-only slice (includeOfflineHandler=true + aggregator_name='Fynd'
+   *     post-filter). Drives the Offline MOP panel (COD / Cash-at-store / UPI-at-store).
+   */
+  slice?: 'online' | 'offline';
+};
+
 /**
  * MOP mix — share of volume per payment mode in the current slice.
  *
@@ -20,18 +30,31 @@ export type MopMixRow = {
  * Returns both so the UI can pivot between them. SQL-side MOP normalization is applied so
  * Hindi/Marathi/Gujarati Paytm script aliases collapse, etc.
  */
-export function mopMixQuery(filters: DashboardFilters): BQQuery {
-  const slice = buildSliceCTE(filters);
+export function mopMixQuery(
+  filters: DashboardFilters,
+  options: MopMixOptions = {},
+): BQQuery {
+  const isOffline = options.slice === 'offline';
+  const slice = buildSliceCTE(filters, { includeOfflineHandler: isOffline });
+
+  // For the offline slice we additionally constrain to Fynd-originated rows so the panel
+  // shows ONLY the Fynd-managed offline mix (COD / Cash-at-store / UPI-at-store). Without
+  // this, a stray COD row from another aggregator would show up here too.
+  const sliceFilter = isOffline ? `WHERE aggregator_name = 'Fynd'` : '';
 
   const query = `
     ${slice.sql}
-    , totals AS (SELECT COUNT(*) AS total FROM slice)
+    , scoped AS (
+      SELECT * FROM slice
+      ${sliceFilter}
+    ),
+    totals AS (SELECT COUNT(*) AS total FROM scoped)
     SELECT
       COALESCE(payment_mode, '(unknown)') AS payment_mode,
       ${SQL_MOP_NORMALIZE} AS normalized_mop_identifier,
       COUNT(*) AS transaction_count,
       SAFE_DIVIDE(COUNT(*), (SELECT total FROM totals)) * 100 AS share_pct
-    FROM slice
+    FROM scoped
     GROUP BY payment_mode, normalized_mop_identifier
     ORDER BY transaction_count DESC
     LIMIT 50

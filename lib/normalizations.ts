@@ -53,6 +53,37 @@ export const MOP_GROUP_COLOR: Record<MopGroup, string> = {
 };
 
 /* ============================================================================
+ * OFFLINE MOP MIX — Fynd-managed offline buckets (COD / Cash at store / UPI at store).
+ * The online MopGroup above maps CAS/CSAS → 'COD' and UPIAS → 'Tap-to-pay' which works
+ * fine when the slice is dominated by online PGs, but for the Fynd-only Offline panel
+ * we want sharper labels so leadership can see the offline composition at a glance.
+ * ============================================================================ */
+export type OfflineMopGroup = 'COD' | 'Cash at store' | 'UPI at store' | 'Other';
+
+/** Raw Fynd payment_mode → offline display bucket. */
+export function offlineMopGroupFor(rawPaymentMode: string | null | undefined): OfflineMopGroup {
+  if (!rawPaymentMode) return 'Other';
+  const m = rawPaymentMode.toUpperCase();
+  if (m === 'COD') return 'COD';
+  if (m === 'CAS' || m === 'CSAS') return 'Cash at store';
+  if (m === 'UPIAS') return 'UPI at store';
+  return 'Other';
+}
+
+/** Stable display order for the Offline MOP doughnut. */
+export const OFFLINE_MOP_GROUP_ORDER: OfflineMopGroup[] = [
+  'COD', 'Cash at store', 'UPI at store', 'Other',
+];
+
+/** Earth-toned palette to differentiate the offline panel from the online one. */
+export const OFFLINE_MOP_GROUP_COLOR: Record<OfflineMopGroup, string> = {
+  'COD':           '#d97706', // amber-600 — dominant offline bucket
+  'Cash at store': '#92400e', // amber-800
+  'UPI at store':  '#0f766e', // teal-700
+  'Other':         '#94a3b8', // slate-400
+};
+
+/* ============================================================================
  * REFUND POSTURE — categorize refunds by inferred method using payment_mode
  * (4 KPI tiles from the brief: Instant / Source / Store credit / Cash exchange)
  * ============================================================================ */
