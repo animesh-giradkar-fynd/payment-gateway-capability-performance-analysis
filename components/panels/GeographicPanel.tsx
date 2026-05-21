@@ -78,10 +78,6 @@ export function GeographicPanel() {
           </ResponsiveContainer>
         </div>
       )}
-      <p className="muted" style={{ marginTop: 8, fontSize: 11 }}>
-        State-level India heatmap deferred until region data source is confirmed (PRD Q3).
-        Top storefronts shown as a regional proxy.
-      </p>
     </Panel>
   );
 }

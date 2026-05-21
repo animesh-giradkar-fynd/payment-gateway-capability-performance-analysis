@@ -8,7 +8,6 @@ import { GatewayLeaderboard } from '@/components/panels/GatewayLeaderboard';
 import { GeographicPanel } from '@/components/panels/GeographicPanel';
 import { RegionalHeatmap } from '@/components/panels/RegionalHeatmap';
 import { CapabilityMatrix } from '@/components/matrix/CapabilityMatrix';
-import { OrchestrationPanel } from '@/components/matrix/OrchestrationPanel';
 import { FilterBar } from '@/components/filters/FilterBar';
 import { FyndLogo } from '@/components/FyndLogo';
 
@@ -59,17 +58,6 @@ export default function Dashboard() {
       </section>
 
       <CapabilityMatrix />
-
-      <OrchestrationPanel />
-
-      <section className="upcoming">
-        <h2>Coming next</h2>
-        <ul>
-          <li>State-level India heatmap (swap <code>GeographicPanel</code> for <code>react-simple-maps</code> once region data source confirmed — PRD Q3)</li>
-          <li>Populate <code>data/capabilities.json</code> with per-PG capability research + the roadmap PG list</li>
-          <li>Novus design system swap (mechanical with the <code>--nov-*</code> tokens already in place)</li>
-        </ul>
-      </section>
     </main>
   );
 }
