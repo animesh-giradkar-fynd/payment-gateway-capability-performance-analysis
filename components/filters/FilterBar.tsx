@@ -1,10 +1,18 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import useSWR from 'swr';
 import { useFilterStore } from '@/lib/store/filters';
 import { lastNDays } from '@/lib/filters';
 import { displayMOPLabel } from '@/lib/mop';
 import { useFilterUrlSync } from '@/components/filters/useFilterUrlSync';
+
+// ---------- Types ----------
+
+type Option<TId extends string | number = string | number> = {
+  id: TId;
+  label: string;
+  sublabel?: string;
+};
 
 type FilterOptions = {
   aggregators: { aggregator_id: number; aggregator_name: string; transaction_count: number }[];
@@ -30,6 +38,8 @@ const DATE_PRESETS = [
 
 type DropdownKey = 'pg' | 'mop' | 'profile' | 'seller' | 'channel' | null;
 
+// ---------- Main FilterBar ----------
+
 export function FilterBar() {
   useFilterUrlSync();
 
@@ -46,6 +56,49 @@ export function FilterBar() {
 
   const [open, setOpen] = useState<DropdownKey>(null);
   const toggle = (key: DropdownKey) => setOpen((prev) => (prev === key ? null : key));
+  const close = () => setOpen(null);
+
+  // Outside-click + ESC handlers — applied once at the FilterBar level so each
+  // MultiSelectChip doesn't need its own.
+  const filterBarRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e: MouseEvent) => {
+      if (filterBarRef.current && !filterBarRef.current.contains(e.target as Node)) close();
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+    };
+    document.addEventListener('mousedown', onClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  // Transform raw API data → uniform Option[] shape per dimension
+  const pgOpts: Option<number>[] = (options?.aggregators ?? []).map((a) => ({
+    id: a.aggregator_id,
+    label: a.aggregator_name,
+  }));
+  const mopOpts: Option<string>[] = (options?.payment_modes ?? []).map((m) => ({
+    id: m.payment_mode,
+    label: displayMOPLabel(m.payment_mode),
+    sublabel: m.payment_mode,
+  }));
+  const profileOpts: Option<number>[] = (options?.merchant_profiles ?? []).map((p) => ({
+    id: p.merchant_profile_id,
+    label: p.profile_name,
+  }));
+  const sellerOpts: Option<number>[] = (options?.sellers ?? []).map((s) => ({
+    id: s.seller_id,
+    label: s.seller_name,
+  }));
+  const channelOpts: Option<string>[] = (options?.ordering_channels ?? []).map((c) => ({
+    id: c.ordering_channel,
+    label: c.ordering_channel,
+  }));
 
   const activePg = filters.aggregatorIds?.length ?? 0;
   const activeMop = filters.paymentModes?.length ?? 0;
@@ -55,9 +108,9 @@ export function FilterBar() {
   const anyActive = activePg + activeMop + activeProfile + activeSeller + activeChannel > 0;
 
   return (
-    <div className="filter-bar">
+    <div className="filter-bar" ref={filterBarRef}>
       <div className="filter-row">
-        {/* Date range presets */}
+        {/* Date presets */}
         <div className="filter-group">
           <span className="filter-label">Date</span>
           {DATE_PRESETS.map((preset) => {
@@ -103,137 +156,57 @@ export function FilterBar() {
         <MultiSelectChip
           label="PG"
           allText="All PGs"
-          countActive={activePg}
+          options={pgOpts}
+          selectedIds={filters.aggregatorIds ?? []}
+          onChange={(ids) => patch({ aggregatorIds: ids.length ? (ids as number[]) : undefined })}
           open={open === 'pg'}
           onToggle={() => toggle('pg')}
           disabled={optLoading || !options}
-          onClear={() => patch({ aggregatorIds: undefined })}
-        >
-          {options?.aggregators.map((a) => {
-            const checked = filters.aggregatorIds?.includes(a.aggregator_id) ?? false;
-            return (
-              <CheckRow
-                key={`pg-${a.aggregator_id}-${a.aggregator_name}`}
-                checked={checked}
-                onToggle={(next) => {
-                  const cur = new Set(filters.aggregatorIds ?? []);
-                  next ? cur.add(a.aggregator_id) : cur.delete(a.aggregator_id);
-                  patch({ aggregatorIds: cur.size ? Array.from(cur) : undefined });
-                }}
-                label={a.aggregator_name}
-              />
-            );
-          })}
-        </MultiSelectChip>
-
+        />
         <MultiSelectChip
           label="MOP"
           allText="All MOPs"
-          countActive={activeMop}
+          options={mopOpts}
+          selectedIds={filters.paymentModes ?? []}
+          onChange={(ids) => patch({ paymentModes: ids.length ? (ids as string[]) : undefined })}
           open={open === 'mop'}
           onToggle={() => toggle('mop')}
           disabled={optLoading || !options}
-          onClear={() => patch({ paymentModes: undefined })}
-        >
-          {options?.payment_modes.map((m) => {
-            const checked = filters.paymentModes?.includes(m.payment_mode) ?? false;
-            return (
-              <CheckRow
-                key={m.payment_mode}
-                checked={checked}
-                onToggle={(next) => {
-                  const cur = new Set(filters.paymentModes ?? []);
-                  next ? cur.add(m.payment_mode) : cur.delete(m.payment_mode);
-                  patch({ paymentModes: cur.size ? Array.from(cur) : undefined });
-                }}
-                label={
-                  <>
-                    {displayMOPLabel(m.payment_mode)}{' '}
-                    <span className="muted">({m.payment_mode})</span>
-                  </>
-                }
-              />
-            );
-          })}
-        </MultiSelectChip>
-
+        />
         <MultiSelectChip
           label="Storefront"
           allText="All storefronts"
-          countActive={activeProfile}
+          options={profileOpts}
+          selectedIds={filters.merchantProfileIds ?? []}
+          onChange={(ids) =>
+            patch({ merchantProfileIds: ids.length ? (ids as number[]) : undefined })
+          }
           open={open === 'profile'}
           onToggle={() => toggle('profile')}
           disabled={optLoading || !options}
-          onClear={() => patch({ merchantProfileIds: undefined })}
-        >
-          {options?.merchant_profiles.map((p) => {
-            const checked = filters.merchantProfileIds?.includes(p.merchant_profile_id) ?? false;
-            return (
-              <CheckRow
-                key={p.merchant_profile_id}
-                checked={checked}
-                onToggle={(next) => {
-                  const cur = new Set(filters.merchantProfileIds ?? []);
-                  next ? cur.add(p.merchant_profile_id) : cur.delete(p.merchant_profile_id);
-                  patch({ merchantProfileIds: cur.size ? Array.from(cur) : undefined });
-                }}
-                label={p.profile_name}
-              />
-            );
-          })}
-        </MultiSelectChip>
-
+        />
         <MultiSelectChip
           label="FC Seller"
           allText="All sellers"
-          countActive={activeSeller}
+          options={sellerOpts}
+          selectedIds={filters.sellerIds ?? []}
+          onChange={(ids) => patch({ sellerIds: ids.length ? (ids as number[]) : undefined })}
           open={open === 'seller'}
           onToggle={() => toggle('seller')}
           disabled={optLoading || !options}
-          onClear={() => patch({ sellerIds: undefined })}
-        >
-          {options?.sellers.map((s) => {
-            const checked = filters.sellerIds?.includes(s.seller_id) ?? false;
-            return (
-              <CheckRow
-                key={s.seller_id}
-                checked={checked}
-                onToggle={(next) => {
-                  const cur = new Set(filters.sellerIds ?? []);
-                  next ? cur.add(s.seller_id) : cur.delete(s.seller_id);
-                  patch({ sellerIds: cur.size ? Array.from(cur) : undefined });
-                }}
-                label={s.seller_name}
-              />
-            );
-          })}
-        </MultiSelectChip>
-
+        />
         <MultiSelectChip
           label="Channel"
           allText="All channels"
-          countActive={activeChannel}
+          options={channelOpts}
+          selectedIds={filters.orderingChannel ?? []}
+          onChange={(ids) =>
+            patch({ orderingChannel: ids.length ? (ids as string[]) : undefined })
+          }
           open={open === 'channel'}
           onToggle={() => toggle('channel')}
           disabled={optLoading || !options}
-          onClear={() => patch({ orderingChannel: undefined })}
-        >
-          {options?.ordering_channels.map((c) => {
-            const checked = filters.orderingChannel?.includes(c.ordering_channel) ?? false;
-            return (
-              <CheckRow
-                key={c.ordering_channel}
-                checked={checked}
-                onToggle={(next) => {
-                  const cur = new Set(filters.orderingChannel ?? []);
-                  next ? cur.add(c.ordering_channel) : cur.delete(c.ordering_channel);
-                  patch({ orderingChannel: cur.size ? Array.from(cur) : undefined });
-                }}
-                label={c.ordering_channel}
-              />
-            );
-          })}
-        </MultiSelectChip>
+        />
 
         {/* Country (locked to India for v0) */}
         <div className="filter-group">
@@ -241,7 +214,7 @@ export function FilterBar() {
           <span className="chip chip-locked">India</span>
         </div>
 
-        {/* Compare-to-previous toggle (PRD F2) */}
+        {/* Compare toggle */}
         <div className="filter-group">
           <button
             type="button"
@@ -265,68 +238,167 @@ export function FilterBar() {
   );
 }
 
-// --- Sub-components ---
+// ---------- Reusable multi-select chip ----------
 
-function MultiSelectChip({
-  label,
-  allText,
-  countActive,
-  open,
-  onToggle,
-  disabled,
-  onClear,
-  children,
-}: {
+type ChipProps<TId extends string | number> = {
   label: string;
   allText: string;
-  countActive: number;
+  options: Option<TId>[];
+  selectedIds: TId[];
+  onChange: (next: TId[]) => void;
   open: boolean;
   onToggle: () => void;
   disabled?: boolean;
-  onClear: () => void;
-  children: React.ReactNode;
-}) {
+};
+
+const MAX_INLINE_CHIPS = 2; // show up to 2 inline chips, then "+N"
+const SEARCH_THRESHOLD = 8; // show typeahead when there are > N options
+
+function MultiSelectChip<TId extends string | number>({
+  label,
+  allText,
+  options,
+  selectedIds,
+  onChange,
+  open,
+  onToggle,
+  disabled,
+}: ChipProps<TId>) {
+  const [query, setQuery] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Focus the search input (or first checkbox) when the dropdown opens.
+  useEffect(() => {
+    if (open) {
+      // small delay so the element exists in the DOM
+      const t = setTimeout(() => searchInputRef.current?.focus(), 30);
+      return () => clearTimeout(t);
+    }
+    setQuery(''); // reset search when closed
+  }, [open]);
+
+  const selectedSet = new Set(selectedIds.map(String));
+  const selectedOptions = options.filter((o) => selectedSet.has(String(o.id)));
+  const selectedCount = selectedOptions.length;
+
+  const showSearch = options.length > SEARCH_THRESHOLD;
+  const q = query.trim().toLowerCase();
+  const visibleOptions = q
+    ? options.filter(
+        (o) =>
+          o.label.toLowerCase().includes(q) || (o.sublabel?.toLowerCase().includes(q) ?? false),
+      )
+    : options;
+
+  const toggleId = (id: TId) => {
+    const next = new Set(selectedIds.map(String));
+    if (next.has(String(id))) next.delete(String(id));
+    else next.add(String(id));
+    onChange(
+      options.filter((o) => next.has(String(o.id))).map((o) => o.id) as TId[],
+    );
+  };
+
+  const removeInline = (id: TId, e: React.MouseEvent) => {
+    e.stopPropagation(); // don't trigger the chip's onToggle
+    onChange(selectedIds.filter((x) => String(x) !== String(id)));
+  };
+
   return (
-    <div className="filter-group" style={{ position: 'relative' }}>
+    <div className="filter-group filter-group-msc">
       <span className="filter-label">{label}</span>
       <button
         type="button"
-        className={`chip ${countActive > 0 ? 'chip-active' : ''}`}
+        className={`chip msc-trigger ${selectedCount > 0 ? 'chip-active' : ''}`}
         onClick={onToggle}
         disabled={disabled}
+        aria-expanded={open}
+        aria-haspopup="listbox"
       >
-        {countActive > 0 ? `${countActive} selected` : allText} ▾
+        {selectedCount === 0 ? (
+          <span>
+            {allText} <span className="msc-caret">▾</span>
+          </span>
+        ) : (
+          <span className="msc-inline-chips">
+            {selectedOptions.slice(0, MAX_INLINE_CHIPS).map((o) => (
+              <span key={String(o.id)} className="msc-inline-chip" title={o.label}>
+                <span className="msc-inline-label">{o.label}</span>
+                <span
+                  className="msc-inline-x"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Remove ${o.label}`}
+                  onClick={(e) => removeInline(o.id, e)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onChange(selectedIds.filter((x) => String(x) !== String(o.id)));
+                    }
+                  }}
+                >
+                  ×
+                </span>
+              </span>
+            ))}
+            {selectedCount > MAX_INLINE_CHIPS ? (
+              <span className="msc-inline-overflow">+{selectedCount - MAX_INLINE_CHIPS}</span>
+            ) : null}
+            <span className="msc-caret">▾</span>
+          </span>
+        )}
       </button>
+
       {open ? (
-        <div className="dropdown">
+        <div className="dropdown dropdown-animated" role="listbox">
           <div className="dropdown-header">
             <span>{label}</span>
-            {countActive > 0 ? (
-              <button type="button" className="text-button" onClick={onClear}>
+            {selectedCount > 0 ? (
+              <button type="button" className="text-button" onClick={() => onChange([])}>
                 Clear
               </button>
             ) : null}
           </div>
-          <div className="dropdown-list">{children}</div>
+          {showSearch ? (
+            <div className="dropdown-search-wrap">
+              <input
+                ref={searchInputRef}
+                type="text"
+                className="dropdown-search-input"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={`Search ${label.toLowerCase()}…`}
+                aria-label={`Search ${label}`}
+                autoComplete="off"
+              />
+            </div>
+          ) : null}
+          <div className="dropdown-list">
+            {visibleOptions.length === 0 ? (
+              <div className="dropdown-empty">No matches.</div>
+            ) : (
+              visibleOptions.map((o) => {
+                const checked = selectedSet.has(String(o.id));
+                return (
+                  <label key={String(o.id)} className="dropdown-row">
+                    <input type="checkbox" checked={checked} onChange={() => toggleId(o.id)} />
+                    <span className="dropdown-row-label">
+                      {o.label}
+                      {o.sublabel ? <span className="muted"> ({o.sublabel})</span> : null}
+                    </span>
+                  </label>
+                );
+              })
+            )}
+          </div>
+          {q && visibleOptions.length > 0 ? (
+            <div className="dropdown-footer muted">
+              Showing {visibleOptions.length} of {options.length}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>
-  );
-}
-
-function CheckRow({
-  checked,
-  onToggle,
-  label,
-}: {
-  checked: boolean;
-  onToggle: (next: boolean) => void;
-  label: React.ReactNode;
-}) {
-  return (
-    <label className="dropdown-row">
-      <input type="checkbox" checked={checked} onChange={(e) => onToggle(e.target.checked)} />
-      <span>{label}</span>
-    </label>
   );
 }

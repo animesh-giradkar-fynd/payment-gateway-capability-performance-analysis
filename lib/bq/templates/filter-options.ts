@@ -46,7 +46,16 @@ export function filterOptionsQuery(): BQQuery {
       WHERE DATE(t.created_on) >= DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)
         AND t.is_active = TRUE
         AND LOWER(IFNULL(m.name, '')) NOT LIKE '%test%'
-        AND IFNULL(agg.name, '') <> 'Openapi'
+        -- Same aggregator exclusion as buildSliceCTE in base.ts — keep the dropdown
+        -- showing only real customer-facing PGs. Edit both files in lockstep.
+        AND LOWER(IFNULL(agg.name, '')) NOT IN (
+          'fynd', 'creditnote', 'store credits', 'credit', 'openapi',
+          'payment-fahim', 'asmakhanextprod'
+        )
+        AND LOWER(IFNULL(agg.name, '')) NOT LIKE '%test%'
+        AND LOWER(IFNULL(agg.name, '')) NOT LIKE '%uat%'
+        AND LOWER(IFNULL(agg.name, '')) NOT LIKE '%dev%'
+        AND LOWER(IFNULL(agg.name, '')) NOT LIKE '%sandbox%'
         AND IFNULL(t.payment_mode, '') <> 'PAYMENTLINK'
         AND IFNULL(t.transaction_type, '') <> 'REFUND'
     )

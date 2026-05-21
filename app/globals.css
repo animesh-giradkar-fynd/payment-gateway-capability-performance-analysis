@@ -347,8 +347,17 @@ body {
   border: 1px solid var(--nov-color-border-neutral-4);
   border-radius: var(--nov-radius-md);
   box-shadow: var(--nov-shadow-m);
-  min-width: 240px;
-  max-width: 320px;
+  min-width: 260px;
+  max-width: 360px;
+}
+/* Subtle enter animation matching modern popovers. */
+.dropdown-animated {
+  animation: dropdownIn 140ms cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: top left;
+}
+@keyframes dropdownIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
 }
 .dropdown-header {
   display: flex;
@@ -362,10 +371,42 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+.dropdown-search-wrap {
+  padding: var(--nov-spacing-2) var(--nov-spacing-2) var(--nov-spacing-2);
+  border-bottom: 1px solid var(--nov-color-border-neutral-4);
+}
+.dropdown-search-input {
+  width: 100%;
+  border: 1px solid var(--nov-color-border-neutral-6);
+  border-radius: var(--nov-radius-xs);
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  background: var(--nov-color-bg-surface);
+  outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.dropdown-search-input:focus {
+  border-color: var(--nov-color-text-brand-9);
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
+}
 .dropdown-list {
   max-height: 320px;
   overflow-y: auto;
   padding: 4px 0;
+}
+.dropdown-empty {
+  padding: var(--nov-spacing-3);
+  font-size: 12px;
+  color: var(--nov-color-text-secondary);
+  text-align: center;
+  font-style: italic;
+}
+.dropdown-footer {
+  padding: 6px var(--nov-spacing-3);
+  border-top: 1px solid var(--nov-color-border-neutral-4);
+  font-size: 11px;
+  text-align: right;
 }
 .dropdown-row {
   display: flex;
@@ -377,7 +418,65 @@ body {
 }
 .dropdown-row:hover { background: rgba(0,0,0,0.04); }
 .dropdown-row input[type="checkbox"] { margin: 0; }
+.dropdown-row-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dropdown-row .muted { font-size: 11px; }
+
+/* === Inline selected chips inside the trigger button === */
+.filter-group-msc { position: relative; }
+.msc-trigger {
+  padding: 4px 8px 4px 8px;
+  max-width: 360px;
+}
+.msc-caret { font-size: 10px; opacity: 0.7; margin-left: 4px; }
+.msc-inline-chips {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+.msc-inline-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 120px;
+  padding: 2px 4px 2px 8px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.chip-active .msc-inline-chip {
+  background: rgba(255, 255, 255, 0.22);
+}
+.msc-inline-label {
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.msc-inline-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 120ms, background 120ms;
+  font-size: 11px;
+  line-height: 1;
+}
+.msc-inline-x:hover {
+  opacity: 1;
+  background: rgba(0,0,0,0.2);
+}
+.msc-inline-overflow {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 4px;
+  opacity: 0.85;
+}
 
 /* === Panel grid === */
 .panel-grid-2 {

@@ -164,7 +164,22 @@ export function buildSliceCTE(
       SELECT *
       FROM joined
       WHERE LOWER(IFNULL(brand_name, '')) NOT LIKE '%test%'
-        AND IFNULL(aggregator_name, '') <> 'Openapi'
+        -- Aggregator exclusion list. Keeps the PG panels comparing real,
+        -- customer-facing payment gateways (Razorpay/Juspay/Cashfree/etc.) only.
+        --   - 'fynd' is Fynd's internal offline handler (~91% COD/Cash/UPI-at-store).
+        --     The offline volume still shows up correctly in MOP Mix via COD/Cash buckets.
+        --   - 'creditnote', 'store credits', 'credit' are internal wallet/adjustment paths.
+        --   - 'openapi' is the sandbox/test adapter (was the only excluded one originally).
+        --   - 'payment-fahim', 'asmakhanextprod' are dev/personal aggregators.
+        -- Patterns catch generic test/uat/dev/sandbox naming.
+        AND LOWER(IFNULL(aggregator_name, '')) NOT IN (
+          'fynd', 'creditnote', 'store credits', 'credit', 'openapi',
+          'payment-fahim', 'asmakhanextprod'
+        )
+        AND LOWER(IFNULL(aggregator_name, '')) NOT LIKE '%test%'
+        AND LOWER(IFNULL(aggregator_name, '')) NOT LIKE '%uat%'
+        AND LOWER(IFNULL(aggregator_name, '')) NOT LIKE '%dev%'
+        AND LOWER(IFNULL(aggregator_name, '')) NOT LIKE '%sandbox%'
         AND IFNULL(payment_mode, '') <> 'PAYMENTLINK'
         ${refundClause}
     )
