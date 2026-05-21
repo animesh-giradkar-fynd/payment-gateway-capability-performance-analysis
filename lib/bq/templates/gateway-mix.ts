@@ -5,7 +5,8 @@ export type GatewayMixRow = {
   aggregator_name: string;
   transaction_count: number;
   successful_count: number;
-  failed_count: number;
+  failed_count: number;           // PG-side declines (unified_status = 'failed')
+  cancelled_count: number;        // Fynd 2h-timeout cancels (unified_status = 'pending')
   share_pct: number;
 };
 
@@ -13,13 +14,15 @@ export type GatewayMixRow = {
  * Gateway mix — share of volume per PG in the current slice.
  * Returns rows sorted by transaction_count DESC, plus a share percentage of the slice total.
  *
- * Includes both `successful_count` AND `failed_count` so the leaderboard UI can compute
- * a meaningful success rate over terminal-state rows only — matching `metricsQuery`'s
- * definition. Without `failed_count`, the UI's only option is `success / total`, which
- * is heavily deflated for PGs with a pre-auth flow (Razorpay's `authorized` state shows
- * as `unified_status = 'pending'` until capture lands, often outside the date window).
- * Last probe: Razorpay 7,538 success / 2,308 failed / 4,568 pending → real SR = 76.6%,
- * not 52.3%.
+ * Per Animesh's 2026-05-21 confirmation, Fynd has an internal 2-hour timeout — any
+ * transaction not reaching a terminal PG state within 2 hours is cancelled at Fynd's end.
+ * So `unified_status = 'pending'` rows in our slice (e.g. Razorpay `authorized` that
+ * never got captured) are effectively failed from the customer / Fynd POV. The UI
+ * therefore computes Success Rate as `successful / transaction_count` (= successful /
+ * (successful + failed + cancelled + uncategorized)) — matching `metricsQuery`.
+ *
+ * Surfaces `cancelled_count` separately so the leaderboard tooltip can show
+ * "Cancelled at Fynd (2h timeout)" as a distinct breakdown line.
  */
 export function gatewayMixQuery(filters: DashboardFilters): BQQuery {
   const slice = buildSliceCTE(filters);
@@ -32,6 +35,7 @@ export function gatewayMixQuery(filters: DashboardFilters): BQQuery {
       COUNT(*) AS transaction_count,
       COUNTIF(unified_status IN ('complete', 'completed', 'paid')) AS successful_count,
       COUNTIF(unified_status = 'failed') AS failed_count,
+      COUNTIF(unified_status = 'pending') AS cancelled_count,
       SAFE_DIVIDE(COUNT(*), (SELECT total FROM totals)) * 100 AS share_pct
     FROM slice
     GROUP BY aggregator_name

@@ -66,6 +66,7 @@ export async function POST(req: Request) {
         transaction_volume: 0,
         successful_count: 0,
         failed_count: 0,
+        cancelled_count: 0,
         success_rate_pct: null,
         failure_rate_pct: null,
         avg_ticket_size: null,

@@ -26,10 +26,10 @@ const STATE_GLYPH: Record<CellState, string> = {
 /**
  * Per-gateway header annotations — shown as a tiny grey caption under the PG name.
  * Use sparingly; only when a PG's role differs from "customer-facing payment gateway".
+ * Currently empty (Cashfree subtitle dropped per Animesh 2026-05-21); keeping the map +
+ * render branch in place so future annotations are a one-line add.
  */
-const GATEWAY_SUBTITLE: Record<string, string> = {
-  Cashfree: 'Refund-settlement only (COD)',
-};
+const GATEWAY_SUBTITLE: Record<string, string> = {};
 
 export function CapabilityMatrix() {
   const { data: resp, error, isLoading } = useSWR<{ data: CapabilitiesData }>(

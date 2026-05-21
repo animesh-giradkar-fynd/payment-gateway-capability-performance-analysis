@@ -79,11 +79,19 @@ export function FailuresPanel() {
     grandTotal += r.failure_count;
   }
 
+  // "Other" is the dominant raw-code dump (generic Razorpay/Juspay `FAILED` etc.) and
+  // doesn't help leadership decide what to fix. Hide it from the chart, re-base the
+  // visible bars to sum to 100% of CLASSIFIED failures, and show a small caption
+  // disclosing the unclassified count so the data isn't silently dropped.
+  // Per Animesh 2026-05-21 ("Other doesn't add any value").
+  const unclassifiedCount = totals['Other'];
+  const classifiedTotal = grandTotal - unclassifiedCount;
   const data = FAILURE_CATEGORY_ORDER
+    .filter((cat) => cat !== 'Other')
     .map((cat) => ({
       category: cat,
       failure_count: totals[cat],
-      share_pct: grandTotal > 0 ? (totals[cat] / grandTotal) * 100 : 0,
+      share_pct: classifiedTotal > 0 ? (totals[cat] / classifiedTotal) * 100 : 0,
     }))
     .filter((d) => d.failure_count > 0)
     .sort((a, b) => b.failure_count - a.failure_count);
@@ -160,6 +168,11 @@ export function FailuresPanel() {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+          {unclassifiedCount > 0 ? (
+            <p className="muted" style={{ fontSize: 11, marginTop: 8 }}>
+              Percentages are share of classified failures. {fmtInt.format(unclassifiedCount)} unclassified failures hidden (generic <code>FAILED</code> / <code>PENDING</code> codes with no actionable reason).
+            </p>
+          ) : null}
         </div>
       )}
     </Panel>

@@ -8,6 +8,7 @@ type MetricsRow = {
   transaction_volume: number;
   successful_count: number;
   failed_count: number;
+  cancelled_count: number;
   success_rate_pct: number | null;
   failure_rate_pct: number | null;
   avg_ticket_size: number | null;
@@ -70,7 +71,11 @@ export function MetricCards() {
           previous={previous?.failure_rate_pct ?? null}
           unit="pts"
           invertSentiment
-          fallback={current ? `${fmtInt.format(current.failed_count)} failed` : '—'}
+          fallback={
+            current
+              ? `${fmtInt.format(current.failed_count)} failed · ${fmtInt.format(current.cancelled_count)} cancelled @ 2h`
+              : '—'
+          }
         />
       </Panel>
 

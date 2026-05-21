@@ -4,7 +4,8 @@ import { buildSliceCTE, type BQQuery } from '@/lib/bq/templates/base';
 export type MetricsRow = {
   transaction_volume: number;
   successful_count: number;
-  failed_count: number;
+  failed_count: number;           // PG-side declines (unified_status = 'failed')
+  cancelled_count: number;        // Fynd 2h-timeout cancels (unified_status = 'pending')
   success_rate_pct: number | null;
   failure_rate_pct: number | null;
   avg_ticket_size: number | null;
@@ -26,19 +27,26 @@ export type MetricsResponse = {
 export function metricsQuery(filters: DashboardFilters): BQQuery {
   const slice = buildSliceCTE(filters);
 
+  // SR / FR denominator = total slice volume, per Fynd's 2-hour cancel rule.
+  // Any transaction not reaching a terminal PG status within 2 hours is cancelled at
+  // Fynd's end, so `pending` rows are de-facto failures from the customer's POV.
+  // Including them in the denominator keeps the success-rate honest to Fynd reality.
+  // Source: Animesh confirmation 2026-05-21 — "we have a internal timeout of 2hrs for
+  // any transactions that have not reached terminal state".
   const query = `
     ${slice.sql}
     SELECT
       COUNT(*) AS transaction_volume,
       COUNTIF(unified_status IN ('complete', 'completed', 'paid')) AS successful_count,
       COUNTIF(unified_status = 'failed') AS failed_count,
+      COUNTIF(unified_status = 'pending') AS cancelled_count,
       SAFE_DIVIDE(
         COUNTIF(unified_status IN ('complete', 'completed', 'paid')),
-        COUNTIF(unified_status IN ('complete', 'completed', 'paid', 'failed'))
+        COUNT(*)
       ) * 100 AS success_rate_pct,
       SAFE_DIVIDE(
-        COUNTIF(unified_status = 'failed'),
-        COUNTIF(unified_status IN ('complete', 'completed', 'paid', 'failed'))
+        COUNT(*) - COUNTIF(unified_status IN ('complete', 'completed', 'paid')),
+        COUNT(*)
       ) * 100 AS failure_rate_pct,
       AVG(IF(unified_status IN ('complete', 'completed', 'paid'), amount, NULL)) AS avg_ticket_size
     FROM slice
