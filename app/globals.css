@@ -214,12 +214,26 @@ body {
 .topbar {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   padding-bottom: var(--nov-spacing-4);
   border-bottom: 1px solid var(--nov-color-border-neutral-4);
   margin-bottom: var(--nov-spacing-6);
 }
-.topbar h1 { margin: 0; font-size: 20px; font-weight: 600; }
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--nov-spacing-3);
+}
+.topbar-divider {
+  width: 1px;
+  height: 32px;
+  background: var(--nov-color-border-neutral-6);
+}
+.topbar-title {
+  display: flex;
+  flex-direction: column;
+}
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; line-height: 1.2; }
 .topbar .subtitle {
   font-size: 12px;
   color: var(--nov-color-text-secondary);

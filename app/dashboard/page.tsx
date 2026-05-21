@@ -19,8 +19,9 @@ export default function Dashboard() {
     <main className="dashboard">
       <header className="topbar">
         <div className="topbar-brand">
-          <FyndLogo size={28} />
-          <div>
+          <FyndLogo size={36} />
+          <div className="topbar-divider" aria-hidden />
+          <div className="topbar-title">
             <h1>Payments Capability</h1>
             <span className="subtitle">Ecosystem health · 24h refresh</span>
           </div>
