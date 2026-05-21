@@ -26,12 +26,11 @@ export type FailureReasonRow = {
 export function failuresQuery(filters: DashboardFilters): BQQuery {
   const slice = buildSliceCTE(filters);
 
-  // Failure population = PG-declined (unified_status='failed') + Fynd-cancelled
-  // at 2h (unified_status='pending'). The 2h bucket uses a synthetic reason_code
-  // '__FYND_2H_TIMEOUT__' so the UI can map it to its own dedicated category
-  // alongside the PG-decline reasons. This keeps the panel a *complete* failure
-  // mode breakdown rather than only PG-side declines (which would visually
-  // misrepresent the failure picture — the 2h cancels are the bigger bucket).
+  // Failure population = PG-side declines only (unified_status='failed').
+  // Fynd's 2h-timeout cancels are intentionally excluded — they have no
+  // diagnosable PG-reported reason. The KPI card's failure-rate subline
+  // already calls out the cancelled-at-2h count separately, so leadership
+  // sees the operational signal without it dominating the diagnostic chart.
   const query = `
     ${slice.sql}
     , failed AS (
@@ -47,13 +46,6 @@ export function failuresQuery(filters: DashboardFilters): BQQuery {
         unified_status
       FROM slice
       WHERE unified_status = 'failed'
-      UNION ALL
-      SELECT
-        '__FYND_2H_TIMEOUT__' AS reason_code,
-        CAST(NULL AS STRING) AS error_description,
-        unified_status
-      FROM slice
-      WHERE unified_status = 'pending'
     )
     , total AS (SELECT COUNT(*) AS n FROM failed)
     SELECT
