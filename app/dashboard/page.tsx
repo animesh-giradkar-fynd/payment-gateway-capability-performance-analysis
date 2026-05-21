@@ -4,7 +4,8 @@ import { MetricCards } from '@/components/panels/MetricCards';
 import { GatewayMix } from '@/components/panels/GatewayMix';
 import { MopMix } from '@/components/panels/MopMix';
 import { FailuresPanel } from '@/components/panels/FailuresPanel';
-import { RefundsPanel } from '@/components/panels/RefundsPanel';
+import { RefundPosture } from '@/components/panels/RefundPosture';
+import { GatewayLeaderboard } from '@/components/panels/GatewayLeaderboard';
 import { GeographicPanel } from '@/components/panels/GeographicPanel';
 import { CapabilityMatrix } from '@/components/matrix/CapabilityMatrix';
 import { OrchestrationPanel } from '@/components/matrix/OrchestrationPanel';
@@ -49,6 +50,10 @@ export default function Dashboard() {
         <MetricCards />
       </section>
 
+      <section className="metric-row">
+        <GatewayLeaderboard />
+      </section>
+
       <section className="panel-grid-2">
         <GatewayMix />
         <MopMix />
@@ -56,7 +61,7 @@ export default function Dashboard() {
 
       <section className="panel-grid-2">
         <FailuresPanel />
-        <RefundsPanel />
+        <RefundPosture />
       </section>
 
       <section className="metric-row">

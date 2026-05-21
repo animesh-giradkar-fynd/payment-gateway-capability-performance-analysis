@@ -1,9 +1,13 @@
 'use client';
 import { useState } from 'react';
 import useSWR from 'swr';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Panel } from '@/components/ui/Panel';
 import { useFilterStore } from '@/lib/store/filters';
 import { displayMOPLabel } from '@/lib/mop';
+import {
+  failureCategoryFor, FAILURE_CATEGORY_ORDER, type FailureCategory,
+} from '@/lib/normalizations';
 import type { DashboardFilters } from '@/lib/filters';
 
 type FailureReasonRow = {
@@ -26,9 +30,9 @@ async function postFetcher([url, body]: [string, DashboardFilters]) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  const json = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(json.message ?? `HTTP ${r.status}`);
-  return json;
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.message ?? `HTTP ${r.status}`);
+  return j;
 }
 
 const getFetcher = (url: string) =>
@@ -38,20 +42,11 @@ const getFetcher = (url: string) =>
     return j;
   });
 
-/**
- * Failure-reason drill-down panel.
- *
- * Per PRD F6: independent PG/MOP picker (NOT synced to top filter). Date range comes from
- * the top filter; PG and MOP come from this panel's own state. Default empty = all PGs / MOPs.
- */
 export function FailuresPanel() {
   const topFilters = useFilterStore((s) => s.filters);
-
-  // Independent picker state — local, not in the global store
   const [pickerPg, setPickerPg] = useState<number | null>(null);
   const [pickerMop, setPickerMop] = useState<string | null>(null);
 
-  // Effective filters for this panel: top-filter date + own PG/MOP
   const effective: DashboardFilters = {
     ...topFilters,
     aggregatorIds: pickerPg != null ? [pickerPg] : undefined,
@@ -59,8 +54,7 @@ export function FailuresPanel() {
   };
 
   const { data: optsResp } = useSWR<{ data: FilterOptions }>('/api/filter-options', getFetcher, {
-    revalidateOnFocus: false,
-    dedupingInterval: 60 * 60 * 1000,
+    revalidateOnFocus: false, dedupingInterval: 60 * 60 * 1000,
   });
   const options = optsResp?.data;
 
@@ -70,17 +64,35 @@ export function FailuresPanel() {
     { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
   );
 
-  const rows = resp?.data ?? [];
+  const rawRows = resp?.data ?? [];
   const errMsg = error ? String((error as Error).message ?? error) : null;
-  const isEmpty = !isLoading && !errMsg && rows.length === 0;
+
+  // Bucket raw codes into friendly categories
+  const totals: Record<FailureCategory, number> = {
+    'Authentication failed': 0, 'Issuer decline': 0, 'Gateway error': 0,
+    'User abandoned': 0, 'Verification failed': 0, 'Network / timeout': 0,
+    'Refund / void issue': 0, 'Other': 0,
+  };
+  let grandTotal = 0;
+  for (const r of rawRows) {
+    totals[failureCategoryFor(r.reason_code)] += r.failure_count;
+    grandTotal += r.failure_count;
+  }
+
+  const data = FAILURE_CATEGORY_ORDER
+    .map((cat) => ({
+      category: cat,
+      failure_count: totals[cat],
+      share_pct: grandTotal > 0 ? (totals[cat] / grandTotal) * 100 : 0,
+    }))
+    .filter((d) => d.failure_count > 0)
+    .sort((a, b) => b.failure_count - a.failure_count);
+
+  const isEmpty = !isLoading && !errMsg && data.length === 0;
   const isCleanWindow = isEmpty && !pickerPg && !pickerMop;
 
   return (
-    <Panel
-      title="Failure reasons"
-      loading={isLoading}
-      error={errMsg}
-    >
+    <Panel title="Failure reason breakdown" loading={isLoading} error={errMsg}>
       <div className="failures-picker">
         <span className="muted">Drill into:</span>
         <select
@@ -91,9 +103,7 @@ export function FailuresPanel() {
         >
           <option value="">All PGs</option>
           {options?.aggregators.map((a) => (
-            <option key={a.aggregator_id} value={a.aggregator_id}>
-              {a.aggregator_name}
-            </option>
+            <option key={a.aggregator_id} value={a.aggregator_id}>{a.aggregator_name}</option>
           ))}
         </select>
         <select
@@ -104,20 +114,11 @@ export function FailuresPanel() {
         >
           <option value="">All MOPs</option>
           {options?.payment_modes.map((m) => (
-            <option key={m.payment_mode} value={m.payment_mode}>
-              {displayMOPLabel(m.payment_mode)}
-            </option>
+            <option key={m.payment_mode} value={m.payment_mode}>{displayMOPLabel(m.payment_mode)}</option>
           ))}
         </select>
         {(pickerPg || pickerMop) && (
-          <button
-            type="button"
-            className="text-button"
-            onClick={() => {
-              setPickerPg(null);
-              setPickerMop(null);
-            }}
-          >
+          <button type="button" className="text-button" onClick={() => { setPickerPg(null); setPickerMop(null); }}>
             Clear picker
           </button>
         )}
@@ -127,27 +128,40 @@ export function FailuresPanel() {
         <div className="panel-empty">No failures in this slice — that&rsquo;s a clean window.</div>
       ) : isEmpty ? (
         <div className="panel-empty">No transactions matched the picker.</div>
-      ) : !isLoading && !errMsg ? (
-        <ol className="failures-list">
-          {rows.map((r, i) => (
-            <li key={r.reason_code} className="failures-row">
-              <span className="failures-rank">{i + 1}</span>
-              <div className="failures-body">
-                <div className="failures-reason">{r.reason_code}</div>
-                {r.example_description ? (
-                  <div className="failures-desc" title={r.example_description}>
-                    {r.example_description}
-                  </div>
-                ) : null}
-              </div>
-              <div className="failures-counts">
-                <div className="failures-count">{fmtInt.format(r.failure_count)}</div>
-                <div className="failures-share">{r.share_pct.toFixed(1)}%</div>
-              </div>
-            </li>
-          ))}
-        </ol>
-      ) : null}
+      ) : (
+        <div style={{ width: '100%', height: 240 }}>
+          <ResponsiveContainer>
+            <BarChart data={data} layout="vertical" margin={{ top: 4, right: 24, left: 16, bottom: 4 }}>
+              <XAxis
+                type="number"
+                tickFormatter={(v) => `${v.toFixed(0)}%`}
+                domain={[0, (max: number) => Math.ceil(max + 5)]}
+                fontSize={11}
+              />
+              <YAxis
+                type="category"
+                dataKey="category"
+                width={140}
+                fontSize={12}
+                tick={{ fill: '#374151' }}
+              />
+              <Tooltip
+                cursor={{ fill: 'rgba(0,0,0,0.04)' }}
+                formatter={(_value: number, _name: string, item) => {
+                  const row = item.payload as (typeof data)[number];
+                  return [
+                    `${fmtInt.format(row.failure_count)} (${row.share_pct.toFixed(1)}%)`,
+                    'Failures',
+                  ];
+                }}
+              />
+              <Bar dataKey="share_pct" radius={[0, 3, 3, 0]}>
+                {data.map((_, i) => <Cell key={i} fill="#dc2626" fillOpacity={0.85} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </Panel>
   );
 }

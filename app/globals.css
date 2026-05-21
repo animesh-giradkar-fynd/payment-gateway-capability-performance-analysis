@@ -511,6 +511,46 @@ body {
   border-top: 1px dashed var(--nov-color-border-neutral-4);
 }
 
+/* === Refund posture — 4 KPI tiles + footnote === */
+.refund-posture-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--nov-spacing-3);
+}
+.refund-posture-tile {
+  background: rgba(0, 0, 0, 0.025);
+  border: 1px solid var(--nov-color-border-neutral-4);
+  border-radius: var(--nov-radius-md);
+  padding: var(--nov-spacing-3) var(--nov-spacing-4);
+}
+.refund-posture-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--nov-color-text-secondary);
+  margin-bottom: 6px;
+}
+.refund-posture-value {
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--nov-color-text-primary);
+}
+.refund-posture-sub {
+  font-size: 11px;
+  color: var(--nov-color-text-secondary);
+  margin-top: 4px;
+}
+.refund-posture-count {
+  color: var(--nov-color-text-secondary);
+  opacity: 0.85;
+}
+.refund-posture-note {
+  margin: var(--nov-spacing-3) 0 0 0;
+  font-size: 11px;
+  color: var(--nov-color-text-secondary);
+  font-style: italic;
+}
+
 /* === Capability matrix === */
 .matrix-section {
   background: var(--nov-color-bg-surface);

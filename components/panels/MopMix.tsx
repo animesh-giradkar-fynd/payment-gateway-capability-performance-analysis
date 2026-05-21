@@ -3,7 +3,9 @@ import useSWR from 'swr';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Panel } from '@/components/ui/Panel';
 import { useFilterStore } from '@/lib/store/filters';
-import { displayMOPLabel } from '@/lib/mop';
+import {
+  mopGroupFor, MOP_GROUP_ORDER, MOP_GROUP_COLOR, type MopGroup,
+} from '@/lib/normalizations';
 import type { DashboardFilters } from '@/lib/filters';
 
 type MopMixRow = {
@@ -15,61 +17,54 @@ type MopMixRow = {
 
 const fmtInt = new Intl.NumberFormat('en-IN');
 
-const COLORS = ['#a3194f', '#0d8a5a', '#1e6abf', '#6d28d9', '#b45309', '#be185d', '#3730a3', '#15803d', '#7c2d12', '#0c4a6e'];
-
 async function postFetcher([url, body]: [string, DashboardFilters]) {
   const r = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  const json = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(json.message ?? `HTTP ${r.status}`);
-  return json;
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.message ?? `HTTP ${r.status}`);
+  return j;
 }
 
+/**
+ * MOP mix — share of transactions per normalized group (UPI / Cards / Wallets /
+ * Net banking / BNPL-EMI / COD / Tap-to-pay / Other). Raw payment_mode codes
+ * collapse via lib/normalizations.ts → mopGroupFor.
+ */
 export function MopMix() {
   const filters = useFilterStore((s) => s.filters);
-  const { data: response, error, isLoading } = useSWR<{ data: MopMixRow[] }>(
+  const { data: resp, error, isLoading } = useSWR<{ data: MopMixRow[] }>(
     ['/api/mop-mix', filters],
     postFetcher,
     { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
   );
 
   const errMsg = error ? String((error as Error).message ?? error) : null;
-  const rawRows = response?.data ?? [];
+  const rawRows = resp?.data ?? [];
 
-  // Roll up to one entry per payment_mode (collapse the normalized_mop_identifier breakdown
-  // for the doughnut — that detail belongs in the tooltip / drill-down, not the top-level mix).
-  const collapsed: Array<{ payment_mode: string; transaction_count: number; share_pct: number }> = [];
-  const seen = new Map<string, number>();
+  // Roll up raw payment_modes into the 7 named buckets
+  const totals: Record<MopGroup, number> = {
+    UPI: 0, Cards: 0, Wallets: 0, 'Net banking': 0,
+    'BNPL/EMI': 0, COD: 0, 'Tap-to-pay': 0, Other: 0,
+  };
+  let total = 0;
   for (const r of rawRows) {
-    const existing = seen.get(r.payment_mode);
-    if (existing == null) {
-      seen.set(r.payment_mode, collapsed.length);
-      collapsed.push({ payment_mode: r.payment_mode, transaction_count: r.transaction_count, share_pct: r.share_pct });
-    } else {
-      collapsed[existing].transaction_count += r.transaction_count;
-      collapsed[existing].share_pct += r.share_pct;
-    }
+    totals[mopGroupFor(r.payment_mode)] += r.transaction_count;
+    total += r.transaction_count;
   }
-  collapsed.sort((a, b) => b.transaction_count - a.transaction_count);
 
-  // Top 7 + "Other" rollup keeps the doughnut readable.
-  const top = collapsed.slice(0, 7);
-  const restTotal = collapsed.slice(7).reduce((s, r) => s + r.transaction_count, 0);
-  const restShare = collapsed.slice(7).reduce((s, r) => s + r.share_pct, 0);
-  const doughnutData =
-    restTotal > 0
-      ? [...top, { payment_mode: 'Other', transaction_count: restTotal, share_pct: restShare }]
-      : top;
+  const data = MOP_GROUP_ORDER
+    .map((g) => ({
+      name: g,
+      transaction_count: totals[g],
+      share_pct: total > 0 ? (totals[g] / total) * 100 : 0,
+      fill: MOP_GROUP_COLOR[g],
+    }))
+    .filter((d) => d.transaction_count > 0);
 
-  const labeled = doughnutData.map((d) => ({
-    ...d,
-    label: d.payment_mode === 'Other' ? 'Other' : displayMOPLabel(d.payment_mode),
-  }));
-
-  const isEmpty = !isLoading && !errMsg && labeled.length === 0;
+  const isEmpty = !isLoading && !errMsg && data.length === 0;
 
   return (
     <Panel title="Payment method mix" loading={isLoading} error={errMsg}>
@@ -80,28 +75,27 @@ export function MopMix() {
           <ResponsiveContainer>
             <PieChart>
               <Pie
-                data={labeled}
+                data={data}
                 dataKey="transaction_count"
-                nameKey="label"
-                innerRadius={50}
-                outerRadius={90}
+                nameKey="name"
+                innerRadius={55}
+                outerRadius={95}
                 paddingAngle={1}
               >
-                {labeled.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                ))}
+                {data.map((d, i) => <Cell key={i} fill={d.fill} />)}
               </Pie>
               <Tooltip
                 formatter={(value: number, name: string, item) => {
-                  const share = (item.payload as (typeof labeled)[number]).share_pct;
+                  const share = (item.payload as (typeof data)[number]).share_pct;
                   return [`${fmtInt.format(value)} (${share.toFixed(1)}%)`, name];
                 }}
               />
               <Legend
                 wrapperStyle={{ fontSize: 12 }}
                 iconSize={10}
-                layout="horizontal"
-                verticalAlign="bottom"
+                layout="vertical"
+                verticalAlign="middle"
+                align="right"
               />
             </PieChart>
           </ResponsiveContainer>
