@@ -9,7 +9,7 @@ export const FilterSchema = z.object({
     from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'from must be YYYY-MM-DD'),
     to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'to must be YYYY-MM-DD'),
   }),
-  compareToPreviousPeriod: z.boolean().default(false),
+  compareToPreviousPeriod: z.boolean().default(true),
   country: z.literal('IN').default('IN'),
   orderingChannel: z.array(z.string()).optional(),
   merchantProfileIds: z.array(z.number().int()).optional(),
@@ -29,7 +29,8 @@ export function filtersToSearchParams(f: DashboardFilters): URLSearchParams {
   const sp = new URLSearchParams();
   sp.set('from', f.dateRange.from);
   sp.set('to', f.dateRange.to);
-  if (f.compareToPreviousPeriod) sp.set('compare', '1');
+  // Compare defaults ON — only carry the param in the URL when it's the off case.
+  if (!f.compareToPreviousPeriod) sp.set('compare', '0');
   if (f.orderingChannel?.length) sp.set('channel', f.orderingChannel.join(','));
   if (f.merchantProfileIds?.length) sp.set('profile', f.merchantProfileIds.join(','));
   if (f.sellerIds?.length) sp.set('seller', f.sellerIds.join(','));
@@ -45,7 +46,7 @@ export function filtersFromSearchParams(sp: URLSearchParams): DashboardFilters {
       from: sp.get('from') ?? fallback.from,
       to: sp.get('to') ?? fallback.to,
     },
-    compareToPreviousPeriod: sp.get('compare') === '1',
+    compareToPreviousPeriod: sp.get('compare') !== '0',
     country: 'IN',
     orderingChannel: sp.get('channel')?.split(',').filter(Boolean),
     merchantProfileIds: sp.get('profile')?.split(',').map(Number).filter((n) => Number.isFinite(n)),

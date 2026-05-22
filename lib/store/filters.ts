@@ -15,7 +15,9 @@ interface FilterStore {
 
 const initial: DashboardFilters = {
   dateRange: lastNDays(30),
-  compareToPreviousPeriod: false,
+  // Compare-to-previous-period is ON by default — the trajectory (WoW deltas on the
+  // metric cards) should be visible on load without anyone clicking the toggle.
+  compareToPreviousPeriod: true,
   country: 'IN',
 };
 
