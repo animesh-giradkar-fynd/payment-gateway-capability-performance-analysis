@@ -78,8 +78,7 @@ export function CapabilityMatrix() {
 
       {gateways.length === 0 ? (
         <div className="panel-empty" style={{ padding: 24 }}>
-          No gateways configured. Add entries under <code>gateways</code> in{' '}
-          <code>data/capabilities.json</code>.
+          No gateway capability data available yet.
         </div>
       ) : (
         <MatrixTable bands={data.bands} gateways={gateways} cellSource={data.gateways} />
@@ -101,9 +100,8 @@ export function CapabilityMatrix() {
       ) : null}
 
       <p className="matrix-footer muted">
-        Cells default to &ldquo;Not offered&rdquo; until populated. Edit{' '}
-        <code>data/capabilities.json</code> to flip cells to <code>live</code>,{' '}
-        <code>beta</code>, or <code>available</code>.
+        Live and Available reflect Fynd&rsquo;s current integration status. A blank cell means
+        the gateway doesn&rsquo;t offer that capability — or it hasn&rsquo;t been reviewed yet.
       </p>
     </section>
   );
@@ -167,16 +165,16 @@ function MatrixTable({
 }
 
 function MatrixLegend() {
-  const entries: { state: CellState; label: string }[] = [
-    { state: 'live', label: 'Live' },
-    { state: 'beta', label: 'Beta' },
-    { state: 'available', label: 'Available' },
-    { state: 'not-offered', label: 'Not offered' },
+  const entries: { state: CellState; label: string; desc: string }[] = [
+    { state: 'live', label: 'Live', desc: 'Gateway offers it and Fynd is integrated & live' },
+    { state: 'beta', label: 'Beta', desc: 'Gateway offers it; Fynd integration is in beta' },
+    { state: 'available', label: 'Available', desc: 'Gateway offers it; Fynd has not integrated it yet' },
+    { state: 'not-offered', label: 'Not offered', desc: 'Gateway does not offer this capability' },
   ];
   return (
     <div className="matrix-legend">
       {entries.map((e) => (
-        <span key={e.state} className="matrix-legend-item">
+        <span key={e.state} className="matrix-legend-item" title={`${e.label} — ${e.desc}`}>
           <span className={`matrix-cell-inline matrix-cell-${e.state}`}>
             {STATE_GLYPH[e.state] || ' '}
           </span>

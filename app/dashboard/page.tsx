@@ -11,6 +11,7 @@ import { RegionalHeatmap } from '@/components/panels/RegionalHeatmap';
 import { CapabilityMatrix } from '@/components/matrix/CapabilityMatrix';
 import { FilterBar } from '@/components/filters/FilterBar';
 import { FyndLogo } from '@/components/FyndLogo';
+import { DataFreshness } from '@/components/DataFreshness';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,9 +24,10 @@ export default function Dashboard() {
           <div className="topbar-divider" aria-hidden />
           <div className="topbar-title">
             <h1>Payments Capability</h1>
-            <span className="subtitle">Ecosystem health · 24h refresh</span>
+            <span className="subtitle">Ecosystem health · India</span>
           </div>
         </div>
+        <DataFreshness />
       </header>
 
       <Suspense fallback={<div className="filter-bar-skeleton">Loading filters…</div>}>

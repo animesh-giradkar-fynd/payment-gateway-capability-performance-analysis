@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import { Panel } from '@/components/ui/Panel';
 import { useFilterStore } from '@/lib/store/filters';
+import { gatewayColor, displayGatewayName } from '@/lib/gateways';
 import type { DashboardFilters } from '@/lib/filters';
 
 type GatewayMixRow = {
@@ -22,9 +23,6 @@ type GatewayMixRow = {
 };
 
 const fmtInt = new Intl.NumberFormat('en-IN');
-
-// Categorical palette per design-language.md
-const COLORS = ['#a3194f', '#0d8a5a', '#1e6abf', '#6d28d9', '#b45309', '#be185d', '#3730a3', '#15803d'];
 
 async function postFetcher([url, body]: [string, DashboardFilters]) {
   const r = await fetch(url, {
@@ -45,12 +43,22 @@ export function GatewayMix() {
     { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
   );
 
-  const rows = response?.data ?? [];
+  // Clean display name + a stable per-gateway colour (shared with the leaderboard).
+  const rows = (response?.data ?? []).map((r) => ({
+    ...r,
+    display_name: displayGatewayName(r.aggregator_name),
+    color: gatewayColor(r.aggregator_name),
+  }));
   const errMsg = error ? String((error as Error).message ?? error) : null;
   const isEmpty = !isLoading && !errMsg && rows.length === 0;
 
   return (
-    <Panel title="Gateway mix" loading={isLoading} error={errMsg}>
+    <Panel
+      title="Gateway mix"
+      subtitle="Transaction volume by gateway, this slice."
+      loading={isLoading}
+      error={errMsg}
+    >
       {isEmpty ? (
         <div className="panel-empty">No transactions in this slice.</div>
       ) : (
@@ -59,21 +67,26 @@ export function GatewayMix() {
             <BarChart
               data={rows}
               layout="vertical"
-              margin={{ top: 8, right: 16, left: 16, bottom: 8 }}
+              margin={{ top: 8, right: 16, left: 16, bottom: 24 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#eef0f3" horizontal={false} />
-              <XAxis type="number" tickFormatter={(n) => fmtInt.format(n)} fontSize={11} />
+              <XAxis
+                type="number"
+                tickFormatter={(n) => fmtInt.format(n)}
+                fontSize={11}
+                label={{ value: 'Transactions', position: 'insideBottom', offset: -8, fontSize: 12, fill: '#6b7280' }}
+              />
               <YAxis
                 type="category"
-                dataKey="aggregator_name"
-                width={110}
+                dataKey="display_name"
+                width={120}
                 fontSize={12}
                 tick={{ fill: '#374151' }}
               />
               <Tooltip
                 formatter={(value: number, name: string, item) => {
                   if (name === 'transaction_count') {
-                    const share = (item.payload as GatewayMixRow).share_pct;
+                    const share = (item.payload as (typeof rows)[number]).share_pct;
                     return [`${fmtInt.format(value)} (${share.toFixed(1)}%)`, 'Transactions'];
                   }
                   return [fmtInt.format(value), name];
@@ -81,8 +94,8 @@ export function GatewayMix() {
                 cursor={{ fill: 'rgba(0,0,0,0.04)' }}
               />
               <Bar dataKey="transaction_count" radius={[0, 4, 4, 0]}>
-                {rows.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                {rows.map((r, i) => (
+                  <Cell key={i} fill={r.color} />
                 ))}
               </Bar>
             </BarChart>

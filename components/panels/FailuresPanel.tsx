@@ -100,7 +100,12 @@ export function FailuresPanel() {
   const isCleanWindow = isEmpty && !pickerPg && !pickerMop;
 
   return (
-    <Panel title="Failure reason breakdown" loading={isLoading} error={errMsg}>
+    <Panel
+      title="Failure reason breakdown"
+      subtitle="Why gateway-declined payments failed. This panel has its own gateway / method picker — independent of the top filter bar."
+      loading={isLoading}
+      error={errMsg}
+    >
       <div className="failures-picker">
         <span className="muted">Drill into:</span>
         <select
@@ -109,7 +114,7 @@ export function FailuresPanel() {
           onChange={(e) => setPickerPg(e.target.value ? Number(e.target.value) : null)}
           disabled={!options}
         >
-          <option value="">All PGs</option>
+          <option value="">All gateways</option>
           {options?.aggregators.map((a) => (
             <option key={a.aggregator_id} value={a.aggregator_id}>{a.aggregator_name}</option>
           ))}
@@ -120,7 +125,7 @@ export function FailuresPanel() {
           onChange={(e) => setPickerMop(e.target.value || null)}
           disabled={!options}
         >
-          <option value="">All MOPs</option>
+          <option value="">All methods</option>
           {options?.payment_modes.map((m) => (
             <option key={m.payment_mode} value={m.payment_mode}>{displayMOPLabel(m.payment_mode)}</option>
           ))}
@@ -137,6 +142,7 @@ export function FailuresPanel() {
       ) : isEmpty ? (
         <div className="panel-empty">No transactions matched the picker.</div>
       ) : (
+        <>
         <div style={{ width: '100%', height: 240 }}>
           <ResponsiveContainer>
             <BarChart data={data} layout="vertical" margin={{ top: 4, right: 24, left: 16, bottom: 4 }}>
@@ -169,6 +175,10 @@ export function FailuresPanel() {
             </BarChart>
           </ResponsiveContainer>
         </div>
+        <p className="panel-note">
+          Each bar is that reason&rsquo;s share of failures that carry an identified reason.
+        </p>
+        </>
       )}
     </Panel>
   );

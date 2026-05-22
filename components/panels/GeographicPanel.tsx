@@ -43,7 +43,12 @@ export function GeographicPanel() {
   const isEmpty = !isLoading && !errMsg && rows.length === 0;
 
   return (
-    <Panel title="Top storefronts" loading={isLoading} error={errMsg}>
+    <Panel
+      title="Transactions by surface"
+      subtitle="Where the payment was initiated — web, app, and in-store POS."
+      loading={isLoading}
+      error={errMsg}
+    >
       {isEmpty ? (
         <div className="panel-empty">No transactions in this slice.</div>
       ) : (

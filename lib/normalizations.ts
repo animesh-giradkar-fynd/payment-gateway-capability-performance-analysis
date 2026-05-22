@@ -112,12 +112,12 @@ export const REFUND_METHOD_ORDER: RefundMethod[] = [
   'Instant refund', 'Source refund', 'Store credit', 'Cash / exchange',
 ];
 
-/** Helper text shown under each KPI value (matches the screenshot). */
+/** Helper text shown under each refund-method tile — plain language, no rail jargon. */
 export const REFUND_METHOD_DESCRIPTION: Record<RefundMethod, string> = {
-  'Instant refund':  'UPI · IMPS rail',
-  'Source refund':   'card / netbank',
-  'Store credit':    'wallet rail',
-  'Cash / exchange': 'POS only',
+  'Instant refund':  'UPI / IMPS',
+  'Source refund':   'Back to card or netbanking',
+  'Store credit':    'Wallet balance',
+  'Cash / exchange': 'In-store / exchange',
 };
 
 /* ============================================================================

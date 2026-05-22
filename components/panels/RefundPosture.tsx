@@ -62,7 +62,12 @@ export function RefundPosture() {
   const isEmpty = !isLoading && !errMsg && grandTotal === 0;
 
   return (
-    <Panel title="Refund posture" loading={isLoading} error={errMsg}>
+    <Panel
+      title="Refund posture"
+      subtitle="How refunds were issued — method inferred from how the customer originally paid."
+      loading={isLoading}
+      error={errMsg}
+    >
       {isEmpty ? (
         <div className="panel-empty">No refunds in this slice.</div>
       ) : (
@@ -86,8 +91,8 @@ export function RefundPosture() {
             })}
           </div>
           <p className="refund-posture-note">
-            ⚠ Method inferred from the underlying transaction&rsquo;s payment_mode. Partial refunds on
-            BNPL / EMI typically go through a manual SOP, not the same API rail.
+            Refund method is inferred from how the customer originally paid — it isn&rsquo;t
+            recorded separately. BNPL / EMI part-refunds often follow a manual process.
           </p>
         </>
       )}

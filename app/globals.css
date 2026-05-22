@@ -1117,6 +1117,50 @@ body {
 .metric-delta.good { color: var(--nov-color-text-success-9); }
 .metric-delta.bad { color: var(--nov-color-text-error-9); }
 .metric-delta.neutral { color: var(--nov-color-text-secondary); }
+
+/* Persistent context line under a metric value — always visible (unlike the
+   Compare delta), so the denominator / composition is never hidden. */
+.metric-context {
+  font-size: 11px;
+  color: var(--nov-color-text-secondary);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* One-line explainer under a panel title — pulled tight under the title. */
+.panel-subtitle {
+  font-size: 12px;
+  color: var(--nov-color-text-secondary);
+  line-height: 1.4;
+  margin-top: calc(-1 * var(--nov-spacing-3) + 3px);
+  margin-bottom: var(--nov-spacing-3);
+}
+
+/* Small footnote under a chart (interpretation guide, caveat). */
+.panel-note {
+  font-size: 11px;
+  color: var(--nov-color-text-secondary);
+  line-height: 1.5;
+  margin: var(--nov-spacing-3) 0 0 0;
+}
+
+/* Topbar data-freshness indicator. */
+.topbar-freshness {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--nov-color-text-secondary);
+  white-space: nowrap;
+}
+.topbar-freshness-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #0d8a5a;
+  display: inline-block;
+  flex-shrink: 0;
+}
 .panel-loading, .panel-error, .panel-empty {
   color: var(--nov-color-text-secondary);
   font-size: 13px;

@@ -8,7 +8,7 @@ export type MetricsRow = {
   cancelled_count: number;        // Fynd 2h-timeout cancels (unified_status = 'pending')
   success_rate_pct: number | null;
   failure_rate_pct: number | null;
-  avg_ticket_size: number | null;
+  avg_transaction_value: number | null;
 };
 
 export type MetricsResponse = {
@@ -48,7 +48,7 @@ export function metricsQuery(filters: DashboardFilters): BQQuery {
         COUNT(*) - COUNTIF(unified_status IN ('complete', 'completed', 'paid')),
         COUNT(*)
       ) * 100 AS failure_rate_pct,
-      AVG(IF(unified_status IN ('complete', 'completed', 'paid'), amount, NULL)) AS avg_ticket_size
+      AVG(IF(unified_status IN ('complete', 'completed', 'paid'), amount, NULL)) AS avg_transaction_value
     FROM slice
   `;
 

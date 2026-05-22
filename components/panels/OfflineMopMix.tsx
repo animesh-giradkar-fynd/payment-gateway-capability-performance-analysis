@@ -1,6 +1,6 @@
 'use client';
 import useSWR from 'swr';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend, Label } from 'recharts';
 import { Panel } from '@/components/ui/Panel';
 import { useFilterStore } from '@/lib/store/filters';
 import {
@@ -72,6 +72,7 @@ export function OfflineMopMix() {
   return (
     <Panel
       title="Offline payment method mix (Fynd-managed)"
+      subtitle="Cash on delivery, cash at store and UPI at store — operated by Fynd, not by a payment gateway."
       loading={isLoading}
       error={errMsg}
     >
@@ -90,6 +91,22 @@ export function OfflineMopMix() {
                 paddingAngle={1}
               >
                 {data.map((d, i) => <Cell key={i} fill={d.fill} />)}
+                <Label
+                  content={(props) => {
+                    const vb = props.viewBox as { cx: number; cy: number } | undefined;
+                    if (!vb) return null;
+                    return (
+                      <g>
+                        <text x={vb.cx} y={vb.cy - 6} textAnchor="middle" fontSize={20} fontWeight={700} fill="#0f172a">
+                          {fmtInt.format(total)}
+                        </text>
+                        <text x={vb.cx} y={vb.cy + 13} textAnchor="middle" fontSize={11} fill="#6b7280">
+                          transactions
+                        </text>
+                      </g>
+                    );
+                  }}
+                />
               </Pie>
               <Tooltip
                 formatter={(value: number, name: string, item) => {

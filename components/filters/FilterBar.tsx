@@ -154,8 +154,8 @@ export function FilterBar() {
         </div>
 
         <MultiSelectChip
-          label="PG"
-          allText="All PGs"
+          label="Gateway"
+          allText="All gateways"
           options={pgOpts}
           selectedIds={filters.aggregatorIds ?? []}
           onChange={(ids) => patch({ aggregatorIds: ids.length ? (ids as number[]) : undefined })}
@@ -164,8 +164,8 @@ export function FilterBar() {
           disabled={optLoading || !options}
         />
         <MultiSelectChip
-          label="MOP"
-          allText="All MOPs"
+          label="Payment method"
+          allText="All methods"
           options={mopOpts}
           selectedIds={filters.paymentModes ?? []}
           onChange={(ids) => patch({ paymentModes: ids.length ? (ids as string[]) : undefined })}
@@ -174,8 +174,8 @@ export function FilterBar() {
           disabled={optLoading || !options}
         />
         <MultiSelectChip
-          label="Storefront"
-          allText="All storefronts"
+          label="Surface"
+          allText="All surfaces"
           options={profileOpts}
           selectedIds={filters.merchantProfileIds ?? []}
           onChange={(ids) =>
@@ -186,7 +186,7 @@ export function FilterBar() {
           disabled={optLoading || !options}
         />
         <MultiSelectChip
-          label="FC Seller"
+          label="Seller"
           allText="All sellers"
           options={sellerOpts}
           selectedIds={filters.sellerIds ?? []}

@@ -69,7 +69,7 @@ export async function POST(req: Request) {
         cancelled_count: 0,
         success_rate_pct: null,
         failure_rate_pct: null,
-        avg_ticket_size: null,
+        avg_transaction_value: null,
       },
       previous: previousRow,
     };

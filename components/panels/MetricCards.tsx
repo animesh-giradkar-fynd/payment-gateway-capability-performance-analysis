@@ -11,7 +11,7 @@ type MetricsRow = {
   cancelled_count: number;
   success_rate_pct: number | null;
   failure_rate_pct: number | null;
-  avg_ticket_size: number | null;
+  avg_transaction_value: number | null;
 };
 type MetricsResponse = { current: MetricsRow; previous: MetricsRow | null };
 
@@ -52,6 +52,7 @@ export function MetricCards() {
           previous={previous?.transaction_volume ?? null}
           unit="count"
         />
+        <div className="metric-context">Payment attempts in the selected period</div>
       </Panel>
 
       <Panel title="Success rate" loading={isLoading} error={errMsg}>
@@ -60,8 +61,14 @@ export function MetricCards() {
           current={current?.success_rate_pct ?? null}
           previous={previous?.success_rate_pct ?? null}
           unit="pts"
-          fallback={current ? `${fmtInt.format(current.successful_count)} successful` : '—'}
         />
+        {/* Defines the denominator — so it doesn't read as contradicting the
+            gateway-decided success rate on the leaderboard below. */}
+        <div className="metric-context">
+          {current
+            ? `${fmtInt.format(current.successful_count)} successful ÷ all transactions`
+            : 'Successful ÷ all transactions'}
+        </div>
       </Panel>
 
       <Panel title="Failure rate" loading={isLoading} error={errMsg}>
@@ -71,50 +78,52 @@ export function MetricCards() {
           previous={previous?.failure_rate_pct ?? null}
           unit="pts"
           invertSentiment
-          fallback={
-            current
-              ? `${fmtInt.format(current.failed_count)} failed · ${fmtInt.format(current.cancelled_count)} cancelled @ 2h`
-              : '—'
-          }
         />
+        {/* Composition is always shown — most of this rate is 2h-timeout cancels,
+            not gateway declines, and a viewer must see that split. */}
+        <div className="metric-context">
+          {current
+            ? `${fmtInt.format(current.failed_count)} gateway-declined · ${fmtInt.format(current.cancelled_count)} cancelled at 2h`
+            : 'Gateway declines + 2h-timeout cancels'}
+        </div>
       </Panel>
 
-      <Panel title="Avg ticket" loading={isLoading} error={errMsg}>
-        <div className="metric-value">{fmtRupees(current?.avg_ticket_size ?? null)}</div>
+      <Panel title="Avg Transaction Value" loading={isLoading} error={errMsg}>
+        <div className="metric-value">{fmtRupees(current?.avg_transaction_value ?? null)}</div>
         <Delta
-          current={current?.avg_ticket_size ?? null}
-          previous={previous?.avg_ticket_size ?? null}
+          current={current?.avg_transaction_value ?? null}
+          previous={previous?.avg_transaction_value ?? null}
           unit="rupees"
-          fallback="Successful txns · INR slice"
+          neutral
         />
+        <div className="metric-context">Mean value · successful transactions</div>
       </Panel>
     </div>
   );
 }
 
 /**
- * Delta — renders comparison arrow + value when `previous` is present. Falls back to
- * `fallback` text when comparison is off (most metric cards prefer a contextual sub-line
- * over an empty space).
+ * Delta — renders the comparison line when `previous` is present (Compare is on).
+ * Returns null otherwise; the persistent context line under it carries the
+ * always-visible explainer.
  *
- * `invertSentiment`: for metrics where DOWN is good (failure rate), green-tint a decrease.
+ * `invertSentiment`: for metrics where DOWN is good (failure rate).
+ * `neutral`: for metrics with no inherent good direction (avg transaction value) — no red/green.
  */
 function Delta({
   current,
   previous,
   unit,
-  fallback,
   invertSentiment,
+  neutral,
 }: {
   current: number | null;
   previous: number | null;
   unit: 'count' | 'pts' | 'rupees';
-  fallback?: string;
   invertSentiment?: boolean;
+  neutral?: boolean;
 }) {
-  if (previous == null || current == null) {
-    return <div className="metric-sub">{fallback ?? ' '}</div>;
-  }
+  if (previous == null || current == null) return null;
 
   const diff = current - previous;
   if (diff === 0) {
@@ -122,7 +131,6 @@ function Delta({
   }
 
   const isUp = diff > 0;
-  const goodDirection = invertSentiment ? !isUp : isUp;
   const arrow = isUp ? '↑' : '↓';
   const abs = Math.abs(diff);
   let formatted: string;
@@ -130,8 +138,14 @@ function Delta({
   else if (unit === 'rupees') formatted = `₹${fmtMoney.format(abs)}`;
   else formatted = fmtInt.format(abs);
 
+  const sentiment = neutral
+    ? 'neutral'
+    : (invertSentiment ? !isUp : isUp)
+      ? 'good'
+      : 'bad';
+
   return (
-    <div className={`metric-sub metric-delta ${goodDirection ? 'good' : 'bad'}`}>
+    <div className={`metric-sub metric-delta ${sentiment}`}>
       {arrow} {formatted} vs. previous period
     </div>
   );
