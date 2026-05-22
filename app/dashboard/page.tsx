@@ -12,6 +12,7 @@ import { CapabilityMatrix } from '@/components/matrix/CapabilityMatrix';
 import { FilterBar } from '@/components/filters/FilterBar';
 import { FyndLogo } from '@/components/FyndLogo';
 import { DataFreshness } from '@/components/DataFreshness';
+import { SectionNav } from '@/components/SectionNav';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,37 +35,41 @@ export default function Dashboard() {
         <FilterBar />
       </Suspense>
 
-      <section className="metric-row">
+      <SectionNav />
+
+      <section id="sec-kpis" className="metric-row dash-section">
         <MetricCards />
       </section>
 
-      <section className="metric-row">
+      <section id="sec-gateways" className="metric-row dash-section">
         <GatewayLeaderboard />
       </section>
 
-      <section className="panel-grid-2">
+      <section id="sec-methods" className="panel-grid-2 dash-section">
         <GatewayMix />
         <MopMix />
       </section>
 
-      <section className="metric-row">
+      <section className="metric-row dash-section">
         <OfflineMopMix />
       </section>
 
-      <section className="panel-grid-2">
+      <section id="sec-failures" className="panel-grid-2 dash-section">
         <FailuresPanel />
         <RefundPosture />
       </section>
 
-      <section className="metric-row">
+      <section id="sec-regional" className="metric-row dash-section">
         <RegionalHeatmap />
       </section>
 
-      <section className="metric-row">
+      <section id="sec-surface" className="metric-row dash-section">
         <GeographicPanel />
       </section>
 
-      <CapabilityMatrix />
+      <div id="sec-capabilities" className="dash-section">
+        <CapabilityMatrix />
+      </div>
     </main>
   );
 }

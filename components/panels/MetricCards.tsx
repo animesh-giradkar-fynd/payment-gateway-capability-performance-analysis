@@ -125,9 +125,20 @@ function Delta({
 }) {
   if (previous == null || current == null) return null;
 
+  // Format the prior-period value so it can be shown as an explicit baseline —
+  // gives the headline number a concrete reference point ("is 59.6% good?").
+  const fmtVal = (v: number) =>
+    unit === 'pts' ? `${v.toFixed(1)}%`
+    : unit === 'rupees' ? `₹${fmtMoney.format(v)}`
+    : fmtInt.format(v);
+
   const diff = current - previous;
   if (diff === 0) {
-    return <div className="metric-sub metric-delta neutral">— no change vs. previous period</div>;
+    return (
+      <div className="metric-sub metric-delta neutral">
+        — no change vs. previous period ({fmtVal(previous)})
+      </div>
+    );
   }
 
   const isUp = diff > 0;
@@ -146,7 +157,7 @@ function Delta({
 
   return (
     <div className={`metric-sub metric-delta ${sentiment}`}>
-      {arrow} {formatted} vs. previous period
+      {arrow} {formatted} vs. previous period ({fmtVal(previous)})
     </div>
   );
 }
