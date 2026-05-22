@@ -11,6 +11,8 @@
  *
  * Maintained from: https://en.wikipedia.org/wiki/Postal_Index_Number
  */
+import { mopGroupFor, MOP_GROUP_ORDER, type MopGroup } from '@/lib/normalizations';
+
 const PREFIX_TO_STATE: Array<[RegExp, string]> = [
   // 11 — Delhi
   [/^11/, 'Delhi'],
@@ -91,19 +93,57 @@ export function pincodeToState(pincode: string | null | undefined): string | nul
   return null;
 }
 
+/** Per-state payment-method rollup — one entry per Indian state with order volume. */
+export type StateMopRollup = {
+  state: string;
+  total: number;
+  /** The MOP group with the most orders in this state. */
+  dominant: MopGroup;
+  breakdown: Record<MopGroup, number>;
+};
+
+function emptyBreakdown(): Record<MopGroup, number> {
+  return {
+    UPI: 0, Cards: 0, Wallets: 0, 'Net banking': 0,
+    'BNPL/EMI': 0, COD: 0, 'Tap-to-pay': 0, Other: 0,
+  };
+}
+
 /**
- * Aggregate an array of {pincode, count} into {state, count}.
+ * Roll flat {pincode, payment_mode, order_count} rows up to per-state MOP breakdowns.
+ *   - pincode → state via pincodeToState()
+ *   - payment_mode → group via mopGroupFor()
+ * Rows whose pincode doesn't resolve to a state are dropped. Result is sorted by total
+ * order volume descending.
  */
-export function aggregateByState(
-  rows: Array<{ pincode: string; order_count: number }>,
-): Array<{ state: string; order_count: number }> {
-  const totals = new Map<string, number>();
+export function rollupPincodeMop(
+  rows: Array<{ pincode: string; payment_mode: string; order_count: number }>,
+): StateMopRollup[] {
+  const byState = new Map<string, Record<MopGroup, number>>();
   for (const r of rows) {
     const state = pincodeToState(r.pincode);
     if (!state) continue;
-    totals.set(state, (totals.get(state) ?? 0) + r.order_count);
+    let bd = byState.get(state);
+    if (!bd) {
+      bd = emptyBreakdown();
+      byState.set(state, bd);
+    }
+    bd[mopGroupFor(r.payment_mode)] += r.order_count;
   }
-  return Array.from(totals.entries())
-    .map(([state, order_count]) => ({ state, order_count }))
-    .sort((a, b) => b.order_count - a.order_count);
+
+  return Array.from(byState.entries())
+    .map(([state, breakdown]) => {
+      let total = 0;
+      let dominant: MopGroup = 'Other';
+      let max = -1;
+      for (const g of MOP_GROUP_ORDER) {
+        total += breakdown[g];
+        if (breakdown[g] > max) {
+          max = breakdown[g];
+          dominant = g;
+        }
+      }
+      return { state, total, dominant, breakdown };
+    })
+    .sort((a, b) => b.total - a.total);
 }

@@ -664,61 +664,156 @@ body {
   font-style: italic;
 }
 
-/* === Regional heatmap === */
-.regional-toggle {
+/* === Regional payment-method map === */
+.regional-legend {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--nov-spacing-3);
+  gap: var(--nov-spacing-2) var(--nov-spacing-4);
   margin-bottom: var(--nov-spacing-3);
   padding-bottom: var(--nov-spacing-3);
   border-bottom: 1px solid var(--nov-color-border-neutral-4);
 }
-.regional-coverage {
+.regional-scale-cap {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--nov-color-text-secondary);
+}
+.regional-scale-bar {
+  width: 160px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid var(--nov-color-border-neutral-3);
+}
+.regional-scale-label {
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--nov-color-text-primary);
+}
+.regional-legend-hint {
   margin-left: auto;
   font-size: 11px;
+  font-style: italic;
+  color: var(--nov-color-text-secondary);
 }
-.regional-list {
+.regional-swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  display: inline-block;
+}
+.regional-map-wrap {
+  position: relative;
+}
+.regional-tooltip {
+  position: fixed;
+  z-index: 50;
+  pointer-events: none;
+  min-width: 168px;
+  background: var(--nov-color-bg-surface);
+  border: 1px solid var(--nov-color-border-neutral-3);
+  border-radius: var(--nov-radius-md);
+  box-shadow: var(--nov-shadow-m);
+  padding: var(--nov-spacing-2) var(--nov-spacing-3);
+}
+.regional-tooltip-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--nov-color-text-primary);
+}
+.regional-tooltip-total {
+  font-size: 11px;
+  color: var(--nov-color-text-secondary);
+}
+.regional-tooltip-cod {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--nov-color-text-primary);
+  margin: 4px 0 6px 0;
+}
+.regional-tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 1px 0;
+}
+.regional-tooltip-pct {
+  margin-left: auto;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.regional-detail {
   margin-top: var(--nov-spacing-3);
   padding-top: var(--nov-spacing-3);
   border-top: 1px solid var(--nov-color-border-neutral-4);
 }
-.regional-list-title {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--nov-color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+.regional-detail-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--nov-spacing-3);
   margin-bottom: var(--nov-spacing-2);
 }
-.regional-list ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px var(--nov-spacing-3);
-}
-.regional-list li {
-  display: flex;
-  justify-content: space-between;
+.regional-detail-label {
   font-size: 13px;
-  padding: 3px 0;
-  border-bottom: 1px solid var(--nov-color-border-neutral-4);
-}
-.regional-list li:last-child { border-bottom: none; }
-.regional-list li > span:last-child {
   font-weight: 600;
+  color: var(--nov-color-text-primary);
+}
+.regional-detail-total {
+  font-size: 12px;
+  color: var(--nov-color-text-secondary);
   font-variant-numeric: tabular-nums;
+}
+.regional-detail-head .text-button {
+  margin-left: auto;
+}
+.regional-bar-row {
+  display: grid;
+  grid-template-columns: 132px 1fr 96px;
+  align-items: center;
+  gap: var(--nov-spacing-3);
+  padding: 3px 0;
+}
+.regional-bar-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--nov-color-text-primary);
+}
+.regional-bar-track {
+  position: relative;
+  height: 14px;
+  background: var(--nov-color-border-neutral-4);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.regional-bar-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  border-radius: 3px;
+  min-width: 2px;
+}
+.regional-bar-value {
+  font-size: 12px;
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--nov-color-text-primary);
+}
+.regional-bar-pct {
+  font-weight: 400;
+  color: var(--nov-color-text-secondary);
 }
 .regional-note {
   margin-top: var(--nov-spacing-3);
   font-size: 11px;
-}
-.regional-note code {
-  background: rgba(0,0,0,0.04);
-  padding: 1px 5px;
-  border-radius: 3px;
-  font-size: 10px;
 }
 
 /* === Capability matrix === */
