@@ -665,6 +665,21 @@ body {
 }
 
 /* === Regional payment-method map === */
+.regional-mop-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--nov-spacing-2);
+  margin-bottom: var(--nov-spacing-3);
+}
+.regional-tabs-label {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--nov-color-text-secondary);
+  margin-right: 2px;
+}
 .regional-legend {
   display: flex;
   flex-wrap: wrap;
@@ -729,10 +744,9 @@ body {
   font-size: 11px;
   color: var(--nov-color-text-secondary);
 }
-.regional-tooltip-cod {
+.regional-tooltip-metric {
   font-size: 12px;
   font-weight: 600;
-  color: var(--nov-color-text-primary);
   margin: 4px 0 6px 0;
 }
 .regional-tooltip-row {

@@ -2,61 +2,33 @@ import type { DashboardFilters } from '@/lib/filters';
 import { Z, type BQQuery } from '@/lib/bq/templates/base';
 
 export type RegionalResponse = {
-  /** Flat {pincode, payment_mode, order_count} rows — the route rolls these up to states. */
-  pincode_mop: Array<{ pincode: string; payment_mode: string; order_count: number }>;
-  coverage: { total_orders: number; mapped: number };
+  /** Flat {delivery_state, payment_mode, order_count} rows — the route canonicalizes + rolls up. */
+  state_mop: Array<{ delivery_state: string; payment_mode: string; order_count: number }>;
+  coverage: { total_orders: number };
 };
 
 /**
  * Regional payment-method preference — India.
  *
- * Produces one {pincode, payment_mode, order_count} row per (pincode × MOP), so the UI can
- * colour each Indian state by its dominant payment method.
+ * One {delivery_state, payment_mode, order_count} row per (state × MOP), so the UI can
+ * shade each state by the share of any payment method.
  *
- * Joins:
- *   - dbe_order_transactions → order_id + cart_id (cart id lives in the order meta JSON)
- *   - sfe_cart_address       → pincode, keyed by cart_id (latest address row per cart)
- *   - dbe_transaction        → payment_mode, keyed by merchant_order_id; the latest forward
- *                              (non-refund) transaction is taken as the order's MOP
+ * Sources:
+ *   - dbe_transaction → one payment method per order (latest forward / non-refund txn)
+ *   - dbe_shipments   → delivery_state, keyed by order_id. dbe_shipments is the order-
+ *                       fulfilment DB mirror; delivery_state is ~98% populated and the
+ *                       order_id == merchant_order_id join matches ~99.9% of orders.
  *
- * Coverage is intentionally surfaced: only orders carrying a deliverable address pincode AND
- * a payment method can be placed on the map (~12% in recent probes). The UI shows the ratio
- * so a thin sample is never read as authoritative.
+ * The earlier sfe_cart_address join is gone — that was a storefront *clickstream-event*
+ * table (session_id / user_agent / utm_params …) that only logged ~12% of orders. The
+ * delivery address always exists; it lives on the shipment.
  *
  * Date range comes from the filter envelope. Other DashboardFilters dimensions are NOT
- * applied — the regional view is its own scope (the orders/address join doesn't carry the
- * telemetry slice's PG/MOP predicates).
+ * applied — the regional view is intentionally its own scope.
  */
 export function regionalQuery(filters: DashboardFilters): BQQuery {
-  const pincodeRegex = `r'^[1-9][0-9]{5}$'`;
-  const isMapped = `
-    pincode IS NOT NULL
-    AND REGEXP_CONTAINS(pincode, ${pincodeRegex})
-    AND payment_mode IS NOT NULL
-    AND payment_mode <> ''
-  `;
-
   const query = `
     WITH
-    -- Orders in the date window; cart id is extracted from the order meta JSON.
-    recent_orders AS (
-      SELECT
-        merchant_order_id,
-        JSON_VALUE(meta, '$.create_order_meta.cart._id') AS cart_id
-      FROM ${Z}.dbe_order_transactions
-      WHERE DATE(created_on) BETWEEN DATE(@from) AND DATE(@to)
-    ),
-    -- Latest address row per cart; pincode is the reliably-populated field.
-    cart_addr AS (
-      SELECT cart_id, pincode
-      FROM (
-        SELECT cart_id, pincode,
-               ROW_NUMBER() OVER (PARTITION BY cart_id ORDER BY event_timestamp DESC) AS rn
-        FROM ${Z}.sfe_cart_address
-        WHERE cart_id IS NOT NULL
-      )
-      WHERE rn = 1
-    ),
     -- One payment method per order: the latest forward (non-refund) transaction wins.
     order_mop AS (
       SELECT merchant_order_id, payment_mode
@@ -73,29 +45,36 @@ export function regionalQuery(filters: DashboardFilters): BQQuery {
       )
       WHERE rn = 1
     ),
+    -- Delivery state per order from its forward shipment. The created_on window is
+    -- padded ±30d so shipments raised a little after the order still join.
+    shipment_addr AS (
+      SELECT order_id, ANY_VALUE(delivery_state) AS delivery_state
+      FROM ${Z}.dbe_shipments
+      WHERE DATE(created_on) BETWEEN DATE_SUB(DATE(@from), INTERVAL 30 DAY)
+                                AND DATE_ADD(DATE(@to), INTERVAL 30 DAY)
+        AND journey_type = 'forward'
+        AND delivery_state IS NOT NULL
+        AND delivery_state <> ''
+      GROUP BY order_id
+    ),
     enriched AS (
       SELECT
-        ro.merchant_order_id,
-        ca.pincode,
-        om.payment_mode
-      FROM recent_orders ro
-      LEFT JOIN cart_addr ca ON ca.cart_id = ro.cart_id
-      LEFT JOIN order_mop om ON om.merchant_order_id = ro.merchant_order_id
+        om.merchant_order_id,
+        om.payment_mode,
+        sa.delivery_state
+      FROM order_mop om
+      LEFT JOIN shipment_addr sa ON sa.order_id = om.merchant_order_id
     )
     SELECT
-      -- (pincode × MOP) rollup — the route maps pincode→state and payment_mode→group.
       ARRAY(
-        SELECT AS STRUCT pincode, payment_mode, COUNT(*) AS order_count
+        SELECT AS STRUCT delivery_state, payment_mode, COUNT(*) AS order_count
         FROM enriched
-        WHERE ${isMapped}
-        GROUP BY pincode, payment_mode
-      ) AS pincode_mop,
-
-      -- Coverage stats for the UI disclaimer.
-      STRUCT(
-        COUNT(*) AS total_orders,
-        COUNTIF(${isMapped}) AS mapped
-      ) AS coverage
+        WHERE delivery_state IS NOT NULL
+          AND payment_mode IS NOT NULL
+          AND payment_mode <> ''
+        GROUP BY delivery_state, payment_mode
+      ) AS state_mop,
+      STRUCT(COUNT(*) AS total_orders) AS coverage
     FROM enriched
   `;
 

@@ -6,12 +6,12 @@ import { scaleLinear } from 'd3-scale';
 import { Panel } from '@/components/ui/Panel';
 import { useFilterStore } from '@/lib/store/filters';
 import { MOP_GROUP_ORDER, MOP_GROUP_COLOR, type MopGroup } from '@/lib/normalizations';
+import { stateKey, emptyBreakdown } from '@/lib/state-rollup';
 import type { DashboardFilters } from '@/lib/filters';
 
 type StateMop = {
   state: string;
   total: number;
-  dominant: MopGroup;
   breakdown: Record<MopGroup, number>;
 };
 type RegionalData = {
@@ -24,37 +24,20 @@ const INDIA_TOPO =
   'https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d187fea01ca62ea5112/raw/e388c4cae20aa53cb5090210a42ebb9b765c0a36/india_states.geojson';
 
 const NO_DATA_FILL = '#eef0f3';
-// COD-share gradient: prepaid-leaning (pale) → COD-heavy (deep amber).
-const COD_LOW = '#fde68a';
-const COD_HIGH = '#7c2d12';
+const GRADIENT_LOW = '#eef1f4';
+// Per-MOP heat accent (the gradient's dark end). MOP_GROUP_COLOR.COD is grey — too
+// low-contrast for a choropleth — so COD gets a dedicated amber here.
+const MAP_ACCENT: Record<MopGroup, string> = {
+  ...MOP_GROUP_COLOR,
+  COD: '#92400e',
+};
 // States below this many mapped orders render faded — too thin to read confidently.
 const THIN_DATA = 40;
 const fmtInt = new Intl.NumberFormat('en-IN');
 
-/**
- * Normalize a state name to a comparison key so the BQ-derived names line up with the
- * TopoJSON's `st_nm` values: '&'→'and', drop the 'NCT of' prefix, fix the gist's
- * 'Arunanchal' misspelling, then strip everything but letters.
- */
-function stateKey(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/&/g, 'and')
-    .replace(/\bnct of\b/g, '')
-    .replace(/arunanchal/g, 'arunachal')
-    .replace(/[^a-z]/g, '');
-}
-
-function emptyBreakdown(): Record<MopGroup, number> {
-  return {
-    UPI: 0, Cards: 0, Wallets: 0, 'Net banking': 0,
-    'BNPL/EMI': 0, COD: 0, 'Tap-to-pay': 0, Other: 0,
-  };
-}
-
-/** COD orders as a share of the state's mapped total (0–1). */
-function codShare(s: { total: number; breakdown: Record<MopGroup, number> }): number {
-  return s.total > 0 ? s.breakdown.COD / s.total : 0;
+/** Share (0-1) of a state's orders that used the given MOP group. */
+function shareOf(s: StateMop, g: MopGroup): number {
+  return s.total > 0 ? s.breakdown[g] / s.total : 0;
 }
 
 async function postFetcher([url, body]: [string, DashboardFilters]) {
@@ -80,6 +63,7 @@ export function RegionalHeatmap() {
   const data = resp?.data ?? null;
   const states = useMemo(() => data?.states ?? [], [data]);
 
+  const [metric, setMetric] = useState<MopGroup>('COD');
   const [selected, setSelected] = useState<string | null>(null);
   const [hover, setHover] = useState<{ s: StateMop; x: number; y: number } | null>(null);
 
@@ -90,27 +74,36 @@ export function RegionalHeatmap() {
     return m;
   }, [states]);
 
-  // COD-share colour scale — domain spans the observed min/max so the gradient
-  // uses its full range. Only states with enough data shape the domain.
-  const colorScale = useMemo(() => {
-    const shares = states.filter((s) => s.total >= THIN_DATA).map(codShare);
-    const lo = shares.length ? Math.min(...shares) : 0;
-    const hi = shares.length ? Math.max(...shares) : 1;
-    return scaleLinear<string>()
-      .domain([lo, hi <= lo ? lo + 0.01 : hi])
-      .range([COD_LOW, COD_HIGH])
-      .clamp(true);
+  // MOP groups with volume, largest first — these become the metric chips.
+  const metricGroups = useMemo(() => {
+    const totals = emptyBreakdown();
+    for (const s of states) {
+      for (const g of MOP_GROUP_ORDER) totals[g] += s.breakdown[g];
+    }
+    return MOP_GROUP_ORDER
+      .filter((g) => g !== 'Other' && totals[g] > 0)
+      .sort((a, b) => totals[b] - totals[a]);
   }, [states]);
 
-  // Legend scale endpoints (percent).
-  const scaleBounds = useMemo(() => {
-    const shares = states.filter((s) => s.total >= THIN_DATA).map(codShare);
-    if (!shares.length) return { lo: 0, hi: 100 };
+  // Guard: if the chosen metric has no data, fall back to the largest available.
+  const activeMetric: MopGroup =
+    metricGroups.includes(metric) ? metric : (metricGroups[0] ?? 'COD');
+  const accent = MAP_ACCENT[activeMetric];
+
+  // Colour scale for the active metric — domain spans the observed min/max share.
+  const { colorScale, scaleLo, scaleHi } = useMemo(() => {
+    const shares = states.filter((s) => s.total >= THIN_DATA).map((s) => shareOf(s, activeMetric));
+    const lo = shares.length ? Math.min(...shares) : 0;
+    const hi = shares.length ? Math.max(...shares) : 1;
     return {
-      lo: Math.round(Math.min(...shares) * 100),
-      hi: Math.round(Math.max(...shares) * 100),
+      colorScale: scaleLinear<string>()
+        .domain([lo, hi <= lo ? lo + 0.01 : hi])
+        .range([GRADIENT_LOW, accent])
+        .clamp(true),
+      scaleLo: Math.round(lo * 100),
+      scaleHi: Math.round(hi * 100),
     };
-  }, [states]);
+  }, [states, activeMetric, accent]);
 
   // Detail strip target: the selected state, else the all-India aggregate.
   const detail = useMemo<{ label: string; total: number; breakdown: Record<MopGroup, number> } | null>(() => {
@@ -129,12 +122,6 @@ export function RegionalHeatmap() {
     }
     return { label: 'All mapped orders — India', total, breakdown: agg };
   }, [states, selected, byKey]);
-
-  const coverage = data?.coverage;
-  const coveragePct =
-    coverage && coverage.total_orders > 0
-      ? ((coverage.mapped / coverage.total_orders) * 100).toFixed(1)
-      : '0.0';
 
   const isEmpty = !isLoading && !errMsg && states.length === 0;
 
@@ -157,15 +144,30 @@ export function RegionalHeatmap() {
         <div className="panel-empty">No geo-located orders in the selected window.</div>
       ) : (
         <>
-          {/* Legend — COD-share gradient scale */}
+          {/* Metric switcher — pick which payment method shades the map */}
+          <div className="regional-mop-tabs">
+            <span className="regional-tabs-label">Shade map by</span>
+            {metricGroups.map((g) => (
+              <button
+                key={g}
+                type="button"
+                className={`chip ${g === activeMetric ? 'chip-active' : ''}`}
+                onClick={() => setMetric(g)}
+              >
+                {g}
+              </button>
+            ))}
+          </div>
+
+          {/* Legend — gradient scale for the active metric */}
           <div className="regional-legend">
-            <span className="regional-scale-cap">COD share of orders</span>
-            <span className="regional-scale-label">{scaleBounds.lo}%</span>
+            <span className="regional-scale-cap">{activeMetric} share of orders</span>
+            <span className="regional-scale-label">{scaleLo}%</span>
             <span
               className="regional-scale-bar"
-              style={{ background: `linear-gradient(90deg, ${COD_LOW}, ${COD_HIGH})` }}
+              style={{ background: `linear-gradient(90deg, ${GRADIENT_LOW}, ${accent})` }}
             />
-            <span className="regional-scale-label">{scaleBounds.hi}%</span>
+            <span className="regional-scale-label">{scaleHi}%</span>
             <span className="regional-legend-hint">
               Click a state for its full payment-method split
             </span>
@@ -193,7 +195,7 @@ export function RegionalHeatmap() {
                       const key = stateKey(rawName);
                       const s = byKey.get(key);
                       const isSel = selected === key;
-                      const fill = s ? (colorScale(codShare(s)) as string) : NO_DATA_FILL;
+                      const fill = s ? (colorScale(shareOf(s, activeMetric)) as string) : NO_DATA_FILL;
                       // Thin-data states render faded so they don't read as confident.
                       const opacity = s && s.total < THIN_DATA ? 0.5 : 1;
                       return (
@@ -238,8 +240,8 @@ export function RegionalHeatmap() {
                   {fmtInt.format(hover.s.total)} mapped orders
                   {hover.s.total < THIN_DATA ? ' · thin sample' : ''}
                 </div>
-                <div className="regional-tooltip-cod">
-                  {(codShare(hover.s) * 100).toFixed(0)}% Cash-on-Delivery
+                <div className="regional-tooltip-metric" style={{ color: accent }}>
+                  {(shareOf(hover.s, activeMetric) * 100).toFixed(0)}% {activeMetric}
                 </div>
                 {MOP_GROUP_ORDER
                   .map((g) => ({ g, c: hover.s.breakdown[g] }))
@@ -248,7 +250,7 @@ export function RegionalHeatmap() {
                   .slice(0, 3)
                   .map(({ g, c }) => (
                     <div key={g} className="regional-tooltip-row">
-                      <span className="regional-swatch" style={{ background: MOP_GROUP_COLOR[g] }} />
+                      <span className="regional-swatch" style={{ background: MAP_ACCENT[g] }} />
                       <span>{g}</span>
                       <span className="regional-tooltip-pct">
                         {((c / hover.s.total) * 100).toFixed(0)}%
@@ -282,7 +284,7 @@ export function RegionalHeatmap() {
                   <span className="regional-bar-label">
                     <span
                       className="regional-swatch"
-                      style={{ background: MOP_GROUP_COLOR[group] }}
+                      style={{ background: MAP_ACCENT[group] }}
                     />
                     {group}
                   </span>
@@ -291,7 +293,7 @@ export function RegionalHeatmap() {
                       className="regional-bar-fill"
                       style={{
                         width: detailMax > 0 ? `${(count / detailMax) * 100}%` : '0%',
-                        background: MOP_GROUP_COLOR[group],
+                        background: MAP_ACCENT[group],
                       }}
                     />
                   </span>
@@ -307,11 +309,8 @@ export function RegionalHeatmap() {
           ) : null}
 
           <p className="regional-note muted">
-            Placed on {coverage ? fmtInt.format(coverage.mapped) : '0'} of{' '}
-            {coverage ? fmtInt.format(coverage.total_orders) : '0'} orders ({coveragePct}%) — those
-            carrying both a delivery pincode and a payment method. Pincode→state mapping is
-            approximate at borders; states under {THIN_DATA} mapped orders are faded. Read
-            state-level splits as directional.
+            Delivery state sourced from order shipments. India only — non-Indian
+            shipments excluded. States under {THIN_DATA} orders are faded.
           </p>
         </>
       )}

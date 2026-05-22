@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getBQ } from '@/lib/bq/client';
 import { regionalQuery, type RegionalResponse } from '@/lib/bq/templates/regional';
 import { parseFilters, filterCacheKey } from '@/lib/filters';
-import { rollupPincodeMop } from '@/lib/pincode-to-state';
+import { rollupStateMop } from '@/lib/state-rollup';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -31,16 +31,20 @@ export async function POST(req: Request) {
     const duration = Date.now() - start;
     const row = (rows[0] as RegionalResponse | undefined) ?? null;
 
-    // Roll pincode×MOP rows up to per-state MOP breakdowns server-side, so the browser
-    // payload is a compact ~36-state array rather than thousands of pincode rows.
-    const states = row ? rollupPincodeMop(row.pincode_mop ?? []) : [];
-    const coverage = row?.coverage ?? { total_orders: 0, mapped: 0 };
+    // Canonicalize free-text delivery_state → Indian states and roll up to per-state
+    // MOP breakdowns server-side. `mapped` = orders that landed in a recognized state.
+    const states = row ? rollupStateMop(row.state_mop ?? []) : [];
+    const mapped = states.reduce((sum, s) => sum + s.total, 0);
+    const coverage = {
+      total_orders: row?.coverage?.total_orders ?? 0,
+      mapped,
+    };
 
     console.log(JSON.stringify({
       handler: '/api/regional',
       cacheKey: filterCacheKey(filters),
       states: states.length,
-      mapped: coverage.mapped,
+      mapped,
       durationMs: duration,
     }));
 
