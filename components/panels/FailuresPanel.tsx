@@ -168,11 +168,6 @@ export function FailuresPanel() {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-          {unclassifiedCount > 0 ? (
-            <p className="muted" style={{ fontSize: 11, marginTop: 8 }}>
-              PG-side failures only. Percentages are share of classified PG declines. {fmtInt.format(unclassifiedCount)} generic-<code>FAILED</code> rows hidden — no actionable reason at the raw level. Fynd&rsquo;s 2h-timeout cancels are surfaced separately on the Success rate card.
-            </p>
-          ) : null}
         </div>
       )}
     </Panel>
