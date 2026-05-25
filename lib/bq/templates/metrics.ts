@@ -19,10 +19,12 @@ export type MetricsResponse = {
 /**
  * Metric-cards query — returns 6 values for the current filter slice.
  *
- * When `filters.compareToPreviousPeriod` is true, the route handler runs this query a
- * second time with the previous-period date range and exposes both via MetricsResponse.
- * Single-query helper keeps the template focused; the route layer handles the two-call
- * orchestration so each query is independently cached by Next/SWR.
+ * The route handler always runs this query twice — once for the current slice and
+ * once for the previous-period slice (via `previousPeriodFor`) — and exposes both
+ * via MetricsResponse, so the KPI cards can render the trajectory (↑/↓ vs prior
+ * period) on first load without any user opt-in. Single-query helper keeps the
+ * template focused; the route layer handles the two-call orchestration so each
+ * query is independently cached by Next/SWR.
  */
 export function metricsQuery(filters: DashboardFilters): BQQuery {
   const slice = buildSliceCTE(filters);

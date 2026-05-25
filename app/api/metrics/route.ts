@@ -28,6 +28,7 @@ export async function POST(req: Request) {
     const start = Date.now();
 
     const current = metricsQuery(filters);
+    const prev = metricsQuery(previousPeriodFor(filters));
     const queries: Array<Promise<MetricsRow | null>> = [
       bq.query({
         query: current.query,
@@ -35,19 +36,13 @@ export async function POST(req: Request) {
         types: current.types as Record<string, string>,
         location,
       }).then(([rows]) => (rows[0] as MetricsRow | undefined) ?? null),
+      bq.query({
+        query: prev.query,
+        params: prev.params,
+        types: prev.types as Record<string, string>,
+        location,
+      }).then(([rows]) => (rows[0] as MetricsRow | undefined) ?? null),
     ];
-
-    if (filters.compareToPreviousPeriod) {
-      const prev = metricsQuery(previousPeriodFor(filters));
-      queries.push(
-        bq.query({
-          query: prev.query,
-          params: prev.params,
-          types: prev.types as Record<string, string>,
-          location,
-        }).then(([rows]) => (rows[0] as MetricsRow | undefined) ?? null),
-      );
-    }
 
     const [currentRow, previousRow = null] = await Promise.all(queries);
     const duration = Date.now() - start;
@@ -56,7 +51,6 @@ export async function POST(req: Request) {
       JSON.stringify({
         handler: '/api/metrics',
         cacheKey: filterCacheKey(filters),
-        compare: filters.compareToPreviousPeriod,
         durationMs: duration,
       }),
     );

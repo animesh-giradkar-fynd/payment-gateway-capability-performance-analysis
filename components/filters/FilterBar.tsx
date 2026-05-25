@@ -214,20 +214,8 @@ export function FilterBar() {
           <span className="chip chip-locked">India</span>
         </div>
 
-        {/* Compare toggle */}
-        <div className="filter-group">
-          <button
-            type="button"
-            className={`chip ${filters.compareToPreviousPeriod ? 'chip-active' : ''}`}
-            onClick={() => patch({ compareToPreviousPeriod: !filters.compareToPreviousPeriod })}
-            title="Show delta vs. the equal-length window immediately before this one"
-          >
-            {filters.compareToPreviousPeriod ? '✓ ' : ''}Compare
-          </button>
-        </div>
-
         <div className="filter-group" style={{ marginLeft: 'auto' }}>
-          {anyActive || filters.compareToPreviousPeriod ? (
+          {anyActive ? (
             <button type="button" className="text-button" onClick={reset}>
               Reset
             </button>
