@@ -1303,6 +1303,56 @@ body {
   opacity: 0.85;
 }
 
+/* "What changed" callout — surfaces the 2 biggest absolute movers vs prev period,
+   sits above the KPI cards. Pure derivation from data already fetched. */
+.what-changed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px var(--nov-spacing-4);
+  padding: 10px 14px;
+  margin-bottom: var(--nov-spacing-4);
+  font-size: 12.5px;
+  background: linear-gradient(180deg, #fef9c3 0%, #fef3c7 100%);
+  border: 1px solid #fcd34d;
+  border-radius: var(--nov-radius-md);
+  color: #78350f;
+  line-height: 1.45;
+}
+.what-changed-label {
+  font-weight: 600;
+  color: #78350f;
+}
+.what-changed-item {
+  white-space: normal;
+}
+.what-changed-item strong {
+  font-weight: 600;
+}
+.what-changed-arrow {
+  font-weight: 700;
+  font-size: 14px;
+  display: inline-block;
+  vertical-align: -1px;
+}
+.what-changed-magnitude {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.what-changed-fromto {
+  color: rgba(120, 53, 15, 0.75);
+  font-variant-numeric: tabular-nums;
+}
+.what-changed-good .what-changed-arrow {
+  color: #15803d;
+}
+.what-changed-bad .what-changed-arrow {
+  color: #b91c1c;
+}
+.what-changed-neutral .what-changed-arrow {
+  color: #475569;
+}
+
 /* Active-filter digest strip. Always visible below the FilterBar so any screenshot
    of the page (or a panel within it) carries the slice context. */
 .filter-digest {

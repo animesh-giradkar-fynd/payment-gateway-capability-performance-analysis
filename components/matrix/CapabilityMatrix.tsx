@@ -66,6 +66,24 @@ export function CapabilityMatrix() {
   const gateways = Object.keys(data.gateways);
   const roadmap = Object.keys(data.roadmapGateways);
 
+  // Coverage = explicit cell decisions ÷ total possible cells. "Explicit" means
+  // the JSON has a value for this {gateway, row} pair, regardless of whether it's
+  // live/beta/available/not-offered. Cells absent from the JSON fall through to
+  // the 'not-offered' default — they're indistinguishable from "we never reviewed
+  // this." Surfacing the gap honestly is the point.
+  const totalRows = data.bands.reduce((n, b) => n + b.rows.length, 0);
+  const totalCells = totalRows * gateways.length;
+  let reviewedCells = 0;
+  for (const g of gateways) {
+    const cells = data.gateways[g] ?? {};
+    for (const band of data.bands) {
+      for (const row of band.rows) {
+        if (cells[row.id] !== undefined) reviewedCells += 1;
+      }
+    }
+  }
+  const coveragePct = totalCells > 0 ? (reviewedCells / totalCells) * 100 : 0;
+
   return (
     <section className="matrix-section">
       <div className="matrix-header">
@@ -101,7 +119,10 @@ export function CapabilityMatrix() {
 
       <p className="matrix-footer muted">
         Live and Available reflect Fynd&rsquo;s current integration status. A blank cell means
-        the gateway doesn&rsquo;t offer that capability — or it hasn&rsquo;t been reviewed yet.
+        the gateway doesn&rsquo;t offer that capability — or it hasn&rsquo;t been reviewed yet.{' '}
+        <strong>Coverage: {coveragePct.toFixed(0)}%</strong> ({reviewedCells} of {totalCells} cells
+        explicitly reviewed; the rest default to <em>Not offered</em>).
+        {data.lastUpdated ? ` Last refreshed ${data.lastUpdated}.` : ''}
       </p>
     </section>
   );

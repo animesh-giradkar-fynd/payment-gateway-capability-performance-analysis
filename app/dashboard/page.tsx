@@ -14,6 +14,7 @@ import { FyndLogo } from '@/components/FyndLogo';
 import { DataFreshness } from '@/components/DataFreshness';
 import { SectionNav } from '@/components/SectionNav';
 import { FilterDigest } from '@/components/FilterDigest';
+import { WhatChanged } from '@/components/panels/WhatChanged';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,6 +48,7 @@ export default function Dashboard() {
       <SectionNav />
 
       <section id="sec-kpis" className="metric-row dash-section">
+        <WhatChanged />
         <MetricCards />
       </section>
 
