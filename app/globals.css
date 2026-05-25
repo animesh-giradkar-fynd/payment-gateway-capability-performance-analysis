@@ -1171,6 +1171,32 @@ body {
   line-height: 1.4;
 }
 
+/* Even-smaller secondary explainer below `.metric-context` — used for one-off
+   definitions (e.g. "2h timeout = …") that would crowd the context line. */
+.metric-context-foot {
+  font-size: 10.5px;
+  color: var(--nov-color-text-secondary);
+  margin-top: 3px;
+  line-height: 1.4;
+  font-style: italic;
+  opacity: 0.85;
+}
+
+/* Top-of-page banner — declares the page's audience since the URL is public. */
+.internal-banner {
+  background: #fef3c7;
+  color: #78350f;
+  border-bottom: 1px solid #fcd34d;
+  padding: 8px 24px;
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+}
+.internal-banner strong {
+  font-weight: 600;
+  color: #78350f;
+}
+
 /* One-line explainer under a panel title — pulled tight under the title. */
 .panel-subtitle {
   font-size: 12px;

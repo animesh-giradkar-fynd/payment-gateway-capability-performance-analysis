@@ -52,6 +52,25 @@ export function filtersFromSearchParams(sp: URLSearchParams): DashboardFilters {
   });
 }
 
+/**
+ * Given a date range, compute the equal-length window immediately preceding it.
+ * If the current range is `Apr 26 → May 25` (30 days), the previous window is
+ * `Mar 27 → Apr 25`. Used both by the API (to fetch comparison data) and by the
+ * UI (to label the comparison line on the KPI cards).
+ *
+ * Kept here in lib/filters.ts — not in lib/bq/templates/metrics.ts — because the
+ * client needs it too. Pure date math, no BQ dependency.
+ */
+export function previousPeriodFor(filters: DashboardFilters): DashboardFilters {
+  const from = new Date(filters.dateRange.from + 'T00:00:00Z');
+  const to = new Date(filters.dateRange.to + 'T00:00:00Z');
+  const spanMs = to.getTime() - from.getTime();
+  const prevTo = new Date(from.getTime() - 24 * 60 * 60 * 1000);
+  const prevFrom = new Date(prevTo.getTime() - spanMs);
+  const fmt = (d: Date) => d.toISOString().split('T')[0];
+  return { ...filters, dateRange: { from: fmt(prevFrom), to: fmt(prevTo) } };
+}
+
 export function lastNDays(n: number): { from: string; to: string } {
   const to = new Date();
   const from = new Date();

@@ -2,7 +2,7 @@
 import useSWR from 'swr';
 import { Panel } from '@/components/ui/Panel';
 import { useFilterStore } from '@/lib/store/filters';
-import type { DashboardFilters } from '@/lib/filters';
+import { previousPeriodFor, type DashboardFilters } from '@/lib/filters';
 
 type MetricsRow = {
   transaction_volume: number;
@@ -19,6 +19,14 @@ const fmtInt = new Intl.NumberFormat('en-IN');
 const fmtMoney = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 });
 const fmtPct = (n: number | null) => (n == null ? '—' : `${n.toFixed(1)}%`);
 const fmtRupees = (n: number | null) => (n == null ? '—' : `₹${fmtMoney.format(n)}`);
+
+/** "Mar 27 – Apr 25" — compact range label for the delta footer. Year omitted; same-year case. */
+function fmtRange(fromYmd: string, toYmd: string): string {
+  const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', timeZone: 'UTC' };
+  const f = new Date(fromYmd + 'T00:00:00Z').toLocaleDateString('en-IN', opts);
+  const t = new Date(toYmd + 'T00:00:00Z').toLocaleDateString('en-IN', opts);
+  return `${f} – ${t}`;
+}
 
 async function postFetcher([url, body]: [string, DashboardFilters]) {
   const r = await fetch(url, {
@@ -43,6 +51,19 @@ export function MetricCards() {
   const previous = resp?.data?.previous ?? null;
   const errMsg = error ? String((error as Error).message ?? error) : null;
 
+  // Concrete date label for the comparison line. Without this, "previous period"
+  // is ambiguous — viewer can't tell if it's WoW, MoM, prior-quarter, or YoY.
+  const prevRange = previousPeriodFor(filters).dateRange;
+  const prevRangeLabel = fmtRange(prevRange.from, prevRange.to);
+
+  // Uncategorized = transactions that didn't reach success / fail / 2h-cancel. They
+  // exist (latest_status didn't map to a known unified_status) and the KPI denominator
+  // includes them, so a viewer doing arithmetic on the subline must see them. ~5% in
+  // production today — small but non-zero.
+  const uncategorized = current
+    ? Math.max(0, current.transaction_volume - current.successful_count - current.failed_count - current.cancelled_count)
+    : 0;
+
   return (
     <div className="metric-cards">
       <Panel title="Transactions" loading={isLoading} error={errMsg}>
@@ -51,6 +72,7 @@ export function MetricCards() {
           current={current?.transaction_volume ?? null}
           previous={previous?.transaction_volume ?? null}
           unit="count"
+          prevRangeLabel={prevRangeLabel}
         />
         <div className="metric-context">Payment attempts in the selected period</div>
       </Panel>
@@ -61,6 +83,7 @@ export function MetricCards() {
           current={current?.success_rate_pct ?? null}
           previous={previous?.success_rate_pct ?? null}
           unit="pts"
+          prevRangeLabel={prevRangeLabel}
         />
         {/* Defines the denominator — so it doesn't read as contradicting the
             gateway-decided success rate on the leaderboard below. */}
@@ -78,14 +101,28 @@ export function MetricCards() {
           previous={previous?.failure_rate_pct ?? null}
           unit="pts"
           invertSentiment
+          prevRangeLabel={prevRangeLabel}
         />
         {/* Composition is always shown — most of this rate is 2h-timeout cancels,
-            not gateway declines, and a viewer must see that split. */}
+            not gateway declines, and a viewer must see that split. The uncategorized
+            count is surfaced too so the line adds to total. */}
         <div className="metric-context">
-          {current
-            ? `${fmtInt.format(current.failed_count)} gateway-declined · ${fmtInt.format(current.cancelled_count)} cancelled at 2h`
-            : 'Gateway declines + 2h-timeout cancels'}
+          {current ? (
+            <>
+              {fmtInt.format(current.failed_count)} gateway-declined ·{' '}
+              {fmtInt.format(current.cancelled_count)} cancelled at Fynd (2h timeout)
+              {uncategorized > 0 ? ` · ${fmtInt.format(uncategorized)} uncategorized` : ''}
+            </>
+          ) : (
+            'Gateway declines + Fynd 2h-timeout cancels + uncategorized'
+          )}
         </div>
+        {current ? (
+          <div className="metric-context-foot">
+            2h timeout = Fynd&rsquo;s internal cancel for transactions that never reach a
+            terminal gateway status.
+          </div>
+        ) : null}
       </Panel>
 
       <Panel title="Avg Transaction Value" loading={isLoading} error={errMsg}>
@@ -95,6 +132,7 @@ export function MetricCards() {
           previous={previous?.avg_transaction_value ?? null}
           unit="rupees"
           neutral
+          prevRangeLabel={prevRangeLabel}
         />
         <div className="metric-context">Mean value · successful transactions</div>
       </Panel>
@@ -103,9 +141,9 @@ export function MetricCards() {
 }
 
 /**
- * Delta — renders the comparison line when `previous` is present (Compare is on).
- * Returns null otherwise; the persistent context line under it carries the
- * always-visible explainer.
+ * Delta — renders the comparison line whenever previous-period data is present.
+ * Shows the explicit date range so "previous period" isn't ambiguous — a viewer
+ * can tell at a glance whether the comparison is WoW, MoM, prior-quarter, or YoY.
  *
  * `invertSentiment`: for metrics where DOWN is good (failure rate).
  * `neutral`: for metrics with no inherent good direction (avg transaction value) — no red/green.
@@ -116,12 +154,14 @@ function Delta({
   unit,
   invertSentiment,
   neutral,
+  prevRangeLabel,
 }: {
   current: number | null;
   previous: number | null;
   unit: 'count' | 'pts' | 'rupees';
   invertSentiment?: boolean;
   neutral?: boolean;
+  prevRangeLabel: string;
 }) {
   if (previous == null || current == null) return null;
 
@@ -136,7 +176,7 @@ function Delta({
   if (diff === 0) {
     return (
       <div className="metric-sub metric-delta neutral">
-        — no change vs. previous period ({fmtVal(previous)})
+        — no change vs {prevRangeLabel} ({fmtVal(previous)})
       </div>
     );
   }
@@ -157,7 +197,7 @@ function Delta({
 
   return (
     <div className={`metric-sub metric-delta ${sentiment}`}>
-      {arrow} {formatted} vs. previous period ({fmtVal(previous)})
+      {arrow} {formatted} vs {prevRangeLabel} ({fmtVal(previous)})
     </div>
   );
 }

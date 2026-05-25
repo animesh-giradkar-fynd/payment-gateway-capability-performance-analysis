@@ -19,6 +19,13 @@ export const dynamic = 'force-dynamic';
 export default function Dashboard() {
   return (
     <main className="dashboard">
+      {/* Internal-only banner — the deploy URL is public, so the page itself has
+          to declare its audience. Discourages casual external sharing. */}
+      <div className="internal-banner" role="note">
+        <strong>Internal · do not share externally.</strong>{' '}
+        Contains Fynd payment volumes, success/failure rates, and competitor PG breakdowns.
+      </div>
+
       <header className="topbar">
         <div className="topbar-brand">
           <FyndLogo size={36} iconOnly />

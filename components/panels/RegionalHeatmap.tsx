@@ -62,6 +62,14 @@ export function RegionalHeatmap() {
   const errMsg = error ? String((error as Error).message ?? error) : null;
   const data = resp?.data ?? null;
   const states = useMemo(() => data?.states ?? [], [data]);
+  // Coverage = mapped India-state orders ÷ total orders in the slice. The unmapped
+  // share is international shipments + orders with non-canonical state strings; both
+  // are honest gaps a viewer should see.
+  const coverage = data?.coverage ?? null;
+  const coveragePct =
+    coverage && coverage.total_orders > 0
+      ? (coverage.mapped / coverage.total_orders) * 100
+      : null;
 
   const [metric, setMetric] = useState<MopGroup>('COD');
   const [selected, setSelected] = useState<string | null>(null);
@@ -309,8 +317,15 @@ export function RegionalHeatmap() {
           ) : null}
 
           <p className="regional-note muted">
-            Delivery state sourced from order shipments. India only — non-Indian
-            shipments excluded. States under {THIN_DATA} orders are faded.
+            Delivery state sourced from order shipments — India only.{' '}
+            {coverage && coveragePct != null ? (
+              <>
+                Coverage: <strong>{coveragePct.toFixed(1)}%</strong>
+                {' '}({fmtInt.format(coverage.mapped)} of {fmtInt.format(coverage.total_orders)} orders mapped to an Indian state; the rest are international or missing-state).
+                {' '}
+              </>
+            ) : null}
+            States under {THIN_DATA} orders are faded.
           </p>
         </>
       )}

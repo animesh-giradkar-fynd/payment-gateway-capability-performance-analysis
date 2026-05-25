@@ -1,5 +1,10 @@
 import type { DashboardFilters } from '@/lib/filters';
+import { previousPeriodFor } from '@/lib/filters';
 import { buildSliceCTE, type BQQuery } from '@/lib/bq/templates/base';
+
+// Re-export so existing route-handler imports (`import { previousPeriodFor } from '@/lib/bq/templates/metrics'`)
+// keep working without touching call sites. Pure date math; lives in lib/filters now.
+export { previousPeriodFor };
 
 export type MetricsRow = {
   transaction_volume: number;
@@ -57,17 +62,3 @@ export function metricsQuery(filters: DashboardFilters): BQQuery {
   return { query, params: slice.params, types: slice.types };
 }
 
-/**
- * Given a date range, compute the equal-length window immediately preceding it.
- * Used for the WoW delta — if filter is "Apr 21 → May 20" (30 days), previous is
- * "Mar 22 → Apr 20".
- */
-export function previousPeriodFor(filters: DashboardFilters): DashboardFilters {
-  const from = new Date(filters.dateRange.from + 'T00:00:00Z');
-  const to = new Date(filters.dateRange.to + 'T00:00:00Z');
-  const spanMs = to.getTime() - from.getTime();
-  const prevTo = new Date(from.getTime() - 24 * 60 * 60 * 1000);
-  const prevFrom = new Date(prevTo.getTime() - spanMs);
-  const fmt = (d: Date) => d.toISOString().split('T')[0];
-  return { ...filters, dateRange: { from: fmt(prevFrom), to: fmt(prevTo) } };
-}
