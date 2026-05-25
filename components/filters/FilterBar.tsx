@@ -174,8 +174,8 @@ export function FilterBar() {
           disabled={optLoading || !options}
         />
         <MultiSelectChip
-          label="Surface"
-          allText="All surfaces"
+          label="Storefront"
+          allText="All storefronts"
           options={profileOpts}
           selectedIds={filters.merchantProfileIds ?? []}
           onChange={(ids) =>
@@ -196,8 +196,8 @@ export function FilterBar() {
           disabled={optLoading || !options}
         />
         <MultiSelectChip
-          label="Channel"
-          allText="All channels"
+          label="Surface"
+          allText="All surfaces"
           options={channelOpts}
           selectedIds={filters.orderingChannel ?? []}
           onChange={(ids) =>

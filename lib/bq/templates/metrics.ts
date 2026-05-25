@@ -14,6 +14,7 @@ export type MetricsRow = {
   success_rate_pct: number | null;
   failure_rate_pct: number | null;
   avg_transaction_value: number | null;
+  successful_gmv: number | null;  // SUM(amount) on success only — the GMV KPI card
 };
 
 export type MetricsResponse = {
@@ -55,7 +56,8 @@ export function metricsQuery(filters: DashboardFilters): BQQuery {
         COUNT(*) - COUNTIF(unified_status IN ('complete', 'completed', 'paid')),
         COUNT(*)
       ) * 100 AS failure_rate_pct,
-      AVG(IF(unified_status IN ('complete', 'completed', 'paid'), amount, NULL)) AS avg_transaction_value
+      AVG(IF(unified_status IN ('complete', 'completed', 'paid'), amount, NULL)) AS avg_transaction_value,
+      SUM(IF(unified_status IN ('complete', 'completed', 'paid'), amount, 0)) AS successful_gmv
     FROM slice
   `;
 

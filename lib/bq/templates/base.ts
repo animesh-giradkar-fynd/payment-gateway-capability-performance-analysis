@@ -150,6 +150,7 @@ export function buildSliceCTE(
     joined AS (
       SELECT
         t.id AS transaction_id,
+        t.merchant_order_id,
         t.amount,
         t.refunded_amount,
         t.created_on,

@@ -12,8 +12,15 @@ type MetricsRow = {
   success_rate_pct: number | null;
   failure_rate_pct: number | null;
   avg_transaction_value: number | null;
+  successful_gmv: number | string | null;     // BigQuery NUMERIC arrives as string
 };
 type MetricsResponse = { current: MetricsRow; previous: MetricsRow | null };
+type RefundsSummaryResponse = {
+  summary: {
+    refund_count: number;
+    total_refund_amount: number | string | null;
+  };
+};
 
 const fmtInt = new Intl.NumberFormat('en-IN');
 const fmtMoney = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 });
@@ -46,9 +53,21 @@ export function MetricCards() {
     postFetcher,
     { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
   );
+  // Refunds fetched separately — same SWR shape, parallel network round-trip.
+  // Refund Rate = refund value ÷ successful GMV (period-aligned). Refunds in this
+  // period may correspond to sales from an earlier period — acceptable proxy for
+  // a top-line KPI; the precise cohort match lives in the Refund posture panel.
+  const { data: refRespCur } = useSWR<{ data: RefundsSummaryResponse }>(
+    ['/api/refunds', filters],
+    postFetcher,
+    { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
+  );
 
   const current = resp?.data?.current ?? null;
   const previous = resp?.data?.previous ?? null;
+  const refundAmt = refRespCur?.data?.summary
+    ? Number(refRespCur.data.summary.total_refund_amount ?? 0)
+    : null;
   const errMsg = error ? String((error as Error).message ?? error) : null;
 
   // Concrete date label for the comparison line. Without this, "previous period"
@@ -135,6 +154,38 @@ export function MetricCards() {
           prevRangeLabel={prevRangeLabel}
         />
         <div className="metric-context">Mean value · successful transactions</div>
+      </Panel>
+
+      <Panel title="Successful GMV" loading={isLoading} error={errMsg}>
+        <div className="metric-value">
+          {fmtRupees(current?.successful_gmv != null ? Number(current.successful_gmv) : null)}
+        </div>
+        <Delta
+          current={current?.successful_gmv != null ? Number(current.successful_gmv) : null}
+          previous={previous?.successful_gmv != null ? Number(previous.successful_gmv) : null}
+          unit="rupees"
+          prevRangeLabel={prevRangeLabel}
+        />
+        <div className="metric-context">Total ₹ of successful transactions</div>
+      </Panel>
+
+      <Panel title="Refund rate" loading={isLoading} error={errMsg}>
+        <div className="metric-value">
+          {current?.successful_gmv != null && refundAmt != null && Number(current.successful_gmv) > 0
+            ? `${((refundAmt / Number(current.successful_gmv)) * 100).toFixed(1)}%`
+            : '—'}
+        </div>
+        {/* No delta line — needs previous-period refund total to compare, which is
+            a second BQ round-trip we haven't wired. Add when the refund-summary
+            endpoint surfaces prev-period figures. */}
+        <div className="metric-context">
+          {refundAmt != null
+            ? `${fmtRupees(refundAmt)} refunded ÷ successful GMV`
+            : 'Refunded ÷ successful GMV'}
+        </div>
+        <div className="metric-context-foot">
+          Refund value in this window — may relate to sales from earlier periods.
+        </div>
       </Panel>
     </div>
   );

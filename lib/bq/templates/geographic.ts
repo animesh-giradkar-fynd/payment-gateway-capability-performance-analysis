@@ -1,38 +1,47 @@
 import type { DashboardFilters } from '@/lib/filters';
-import { buildSliceCTE, type BQQuery } from '@/lib/bq/templates/base';
+import { buildSliceCTE, type BQQuery, Z } from '@/lib/bq/templates/base';
 
-export type GeographicRow = {
-  label: string;
+export type SurfaceRow = {
+  ordering_source: string;
   transaction_count: number;
   successful_count: number;
-  share_pct: number;
+  total_amount: number;
+  successful_amount: number;
 };
 
 /**
- * Geographic distribution (v0 fallback per PRD P1.4).
+ * "Transactions by surface" — groups by `dbe_orders.ordering_source`, the real surface
+ * dimension (online storefront / in-store POS / headless Nexus). Replaces the previous
+ * implementation which grouped by `merchant_profile.name` (storefront brand) and had
+ * (unknown) as the second-largest bucket because ~31% of Razorpay-on-storefront txns
+ * have a NULL profile_name. By design the panel now inlines a LEFT JOIN to dbe_orders
+ * (not via buildSliceCTE's opt-in join) since the entire panel's GROUP BY needs it.
  *
- * The brief's spec calls for a state-level India heatmap, but the source column for state
- * data in Zenith is unverified (PRD Q3). Until that lands, this panel surfaces the top-10
- * storefronts (merchant_profile.name) by volume in the slice — a useful regional proxy
- * since most Fynd storefronts are regional brands. When PRD Q3 is resolved, this query is
- * replaced by a state-grouping query and the panel's Recharts bar is swapped for a
- * react-simple-maps choropleth.
+ * `HAVING COUNT(*) >= 50` strips garbage values (e.g. test rows like 'pi694iRig')
+ * without hardcoding their names — resilient to new noise.
  */
-export function geographicQuery(filters: DashboardFilters): BQQuery {
+export function surfaceQuery(filters: DashboardFilters): BQQuery {
   const slice = buildSliceCTE(filters);
 
   const query = `
     ${slice.sql}
-    , totals AS (SELECT COUNT(*) AS total FROM slice)
+    , slice_with_source AS (
+      SELECT s.*, zo.ordering_source
+      FROM slice s
+      LEFT JOIN ${Z}.dbe_orders zo
+        ON zo.order_id = s.merchant_order_id
+    )
     SELECT
-      COALESCE(profile_name, brand_name, '(unknown)') AS label,
+      ordering_source,
       COUNT(*) AS transaction_count,
       COUNTIF(unified_status IN ('complete', 'completed', 'paid')) AS successful_count,
-      SAFE_DIVIDE(COUNT(*), (SELECT total FROM totals)) * 100 AS share_pct
-    FROM slice
-    GROUP BY label
+      SUM(amount) AS total_amount,
+      SUM(IF(unified_status IN ('complete', 'completed', 'paid'), amount, 0)) AS successful_amount
+    FROM slice_with_source
+    WHERE ordering_source IS NOT NULL
+    GROUP BY ordering_source
+    HAVING COUNT(*) >= 50
     ORDER BY transaction_count DESC
-    LIMIT 10
   `;
 
   return { query, params: slice.params, types: slice.types };

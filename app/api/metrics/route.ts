@@ -64,6 +64,7 @@ export async function POST(req: Request) {
         success_rate_pct: null,
         failure_rate_pct: null,
         avg_transaction_value: null,
+        successful_gmv: null,
       },
       previous: previousRow,
     };

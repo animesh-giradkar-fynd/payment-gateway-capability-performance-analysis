@@ -668,6 +668,99 @@ body {
   border-top: 1px dashed var(--nov-color-border-neutral-4);
 }
 
+/* === Surface (Transactions by surface) — comparison table === */
+.surface-table {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+.surface-table-head,
+.surface-row {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 2.2fr)    /* Surface name + hint */
+    minmax(0, 1fr)      /* Transactions */
+    minmax(0, 1fr)      /* Success rate */
+    minmax(0, 1fr)      /* AOV */
+    minmax(0, 1.1fr);   /* GMV */
+  gap: var(--nov-spacing-3);
+  align-items: center;
+  padding: var(--nov-spacing-2) var(--nov-spacing-3);
+}
+.surface-table-head {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--nov-color-text-secondary);
+  border-bottom: 1px solid var(--nov-color-border-neutral-4);
+  padding-bottom: 6px;
+}
+.surface-th-num {
+  text-align: right;
+}
+.surface-row {
+  border-bottom: 1px solid var(--nov-color-border-neutral-3);
+  position: relative;
+}
+.surface-row:last-of-type {
+  border-bottom: none;
+}
+.surface-row-total {
+  background: rgba(0, 0, 0, 0.025);
+  font-weight: 600;
+  border-top: 2px solid var(--nov-color-border-neutral-4);
+  border-bottom: none;
+  margin-top: 4px;
+}
+.surface-td-name {
+  position: relative;
+  min-width: 0;
+}
+.surface-td-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  color: var(--nov-color-text-primary);
+}
+.surface-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.surface-td-hint {
+  font-size: 11px;
+  color: var(--nov-color-text-secondary);
+  margin-top: 2px;
+  margin-left: 18px;
+}
+.surface-share-bar {
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  height: 2px;
+  border-radius: 2px;
+  opacity: 0.6;
+  max-width: 100%;
+}
+.surface-td-num {
+  text-align: right;
+  min-width: 0;
+}
+.surface-td-primary {
+  font-variant-numeric: tabular-nums;
+  color: var(--nov-color-text-primary);
+}
+.surface-td-secondary {
+  font-size: 11px;
+  color: var(--nov-color-text-secondary);
+  margin-top: 1px;
+  font-variant-numeric: tabular-nums;
+}
+
 /* === Refund posture — 4 KPI tiles + footnote === */
 .refund-posture-grid {
   display: grid;
@@ -946,6 +1039,22 @@ body {
   max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
+  /* Stick PG names to the top of the viewport so they stay visible as the
+     reader scrolls through the 30-row matrix. Top offset sits just below the
+     sticky SectionNav (z-index 8); using z-index 5 keeps the headers above
+     the matrix body but under the nav. */
+  position: sticky;
+  top: 48px;
+  z-index: 5;
+  background: var(--nov-color-bg-surface);
+}
+/* The left "Capability" header is sticky in both axes — top with the column
+   headers, and left so the row label stays visible during horizontal scroll. */
+.matrix-row-head.matrix-sticky-col {
+  position: sticky;
+  top: 48px;
+  left: 0;
+  z-index: 6;
 }
 .matrix-col-name {
   display: block;
@@ -1122,12 +1231,17 @@ body {
 }
 
 .metric-cards {
+  /* 6 KPI cards now (Txns, SR, FR, AOV, GMV, Refund rate). Auto-fit so the
+     row wraps to 3+3 on narrower viewports without explicit breakpoints. */
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: var(--nov-spacing-4);
 }
-@media (max-width: 900px) {
-  .metric-cards { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 1280px) {
+  .metric-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+  .metric-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 /* === Panel === */

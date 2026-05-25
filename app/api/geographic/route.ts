@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getBQ } from '@/lib/bq/client';
-import { geographicQuery, type GeographicRow } from '@/lib/bq/templates/geographic';
+import { surfaceQuery, type SurfaceRow } from '@/lib/bq/templates/geographic';
 import { parseFilters, filterCacheKey } from '@/lib/filters';
 
 export const runtime = 'nodejs';
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
 
   try {
     const bq = getBQ();
-    const { query, params, types } = geographicQuery(filters);
+    const { query, params, types } = surfaceQuery(filters);
     const start = Date.now();
     const [rows] = await bq.query({
       query,
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     );
 
     return NextResponse.json({
-      data: rows as GeographicRow[],
+      data: rows as SurfaceRow[],
       generatedAt: new Date().toISOString(),
     });
   } catch (err) {
