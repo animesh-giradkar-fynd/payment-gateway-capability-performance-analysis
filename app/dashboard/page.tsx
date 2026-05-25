@@ -13,6 +13,7 @@ import { FilterBar } from '@/components/filters/FilterBar';
 import { FyndLogo } from '@/components/FyndLogo';
 import { DataFreshness } from '@/components/DataFreshness';
 import { SectionNav } from '@/components/SectionNav';
+import { FilterDigest } from '@/components/FilterDigest';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,6 +42,7 @@ export default function Dashboard() {
       <Suspense fallback={<div className="filter-bar-skeleton">Loading filters…</div>}>
         <FilterBar />
       </Suspense>
+      <FilterDigest />
 
       <SectionNav />
 

@@ -287,6 +287,13 @@ body {
   border-color: var(--nov-color-bg-surface-brand-9);
   color: #fff;
 }
+/* In-view section gets a filled pill — IntersectionObserver-driven. */
+.section-nav-link-active {
+  background: var(--nov-color-bg-surface-brand-9);
+  border-color: var(--nov-color-bg-surface-brand-9);
+  color: #fff;
+  font-weight: 500;
+}
 /* Offset jump targets so the sticky nav doesn't cover a section's top. */
 .dash-section {
   scroll-margin-top: 56px;
@@ -1292,6 +1299,45 @@ body {
   color: var(--nov-color-text-secondary);
   margin-top: 3px;
   line-height: 1.4;
+  font-style: italic;
+  opacity: 0.85;
+}
+
+/* Active-filter digest strip. Always visible below the FilterBar so any screenshot
+   of the page (or a panel within it) carries the slice context. */
+.filter-digest {
+  margin: 0 var(--nov-spacing-4) var(--nov-spacing-3) var(--nov-spacing-4);
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--nov-color-text-secondary);
+  background: rgba(15, 23, 42, 0.03);
+  border: 1px solid var(--nov-color-border-neutral-3);
+  border-radius: var(--nov-radius-md);
+  line-height: 1.5;
+}
+.filter-digest strong {
+  font-weight: 600;
+  color: var(--nov-color-text-primary);
+}
+.filter-digest-sep {
+  margin: 0 8px;
+  opacity: 0.5;
+}
+.filter-digest-part {
+  margin-right: 0;
+}
+.filter-digest-label {
+  color: var(--nov-color-text-primary);
+  font-weight: 500;
+}
+.filter-digest-comma {
+  color: var(--nov-color-text-secondary);
+}
+.filter-digest-more {
+  font-style: italic;
+  opacity: 0.85;
+}
+.filter-digest-clean {
   font-style: italic;
   opacity: 0.85;
 }
