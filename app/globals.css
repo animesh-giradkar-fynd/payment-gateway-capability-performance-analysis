@@ -1304,24 +1304,27 @@ body {
 }
 
 /* "What changed" callout — surfaces the 2 biggest absolute movers vs prev period,
-   sits above the KPI cards. Pure derivation from data already fetched. */
+   sits above the KPI cards. Pure derivation from data already fetched.
+   Toned-down chrome: no fill or coloured border — the strip reads as a quiet
+   sub-line, and the direction arrows carry the only colour signal. */
 .what-changed {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px var(--nov-spacing-4);
-  padding: 10px 14px;
-  margin-bottom: var(--nov-spacing-4);
+  padding: 8px 0;
+  margin-bottom: var(--nov-spacing-3);
   font-size: 12.5px;
-  background: linear-gradient(180deg, #fef9c3 0%, #fef3c7 100%);
-  border: 1px solid #fcd34d;
-  border-radius: var(--nov-radius-md);
-  color: #78350f;
+  color: var(--nov-color-text-primary);
   line-height: 1.45;
 }
 .what-changed-label {
-  font-weight: 600;
-  color: #78350f;
+  font-weight: 500;
+  color: var(--nov-color-text-secondary);
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  margin-right: 2px;
 }
 .what-changed-item {
   white-space: normal;
@@ -1340,7 +1343,7 @@ body {
   font-variant-numeric: tabular-nums;
 }
 .what-changed-fromto {
-  color: rgba(120, 53, 15, 0.75);
+  color: var(--nov-color-text-secondary);
   font-variant-numeric: tabular-nums;
 }
 .what-changed-good .what-changed-arrow {
@@ -1392,19 +1395,21 @@ body {
   opacity: 0.85;
 }
 
-/* Top-of-page banner — declares the page's audience since the URL is public. */
+/* Top-of-page banner — declares the page's audience since the URL is public.
+   Toned-down: neutral surface tint, no warning colours. Still distinct enough
+   to be noticed; not loud enough to dominate the page above the topbar. */
 .internal-banner {
-  background: #fef3c7;
-  color: #78350f;
-  border-bottom: 1px solid #fcd34d;
-  padding: 8px 24px;
-  font-size: 12px;
+  background: rgba(15, 23, 42, 0.04);
+  color: var(--nov-color-text-secondary);
+  border-bottom: 1px solid var(--nov-color-border-neutral-4);
+  padding: 6px 24px;
+  font-size: 11.5px;
   line-height: 1.4;
   text-align: center;
 }
 .internal-banner strong {
   font-weight: 600;
-  color: #78350f;
+  color: var(--nov-color-text-primary);
 }
 
 /* One-line explainer under a panel title — pulled tight under the title. */
