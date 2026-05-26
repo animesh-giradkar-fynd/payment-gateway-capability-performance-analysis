@@ -101,7 +101,10 @@ export function GeographicPanel() {
       error={errMsg}
     >
       {isEmpty ? (
-        <div className="panel-empty">No surface data in the selected window.</div>
+        <div className="panel-empty">
+          No surface data in the selected window.{' '}
+          <span className="panel-empty-hint">Try widening the date range or clearing a filter.</span>
+        </div>
       ) : (
         <div className="surface-table">
           <div className="surface-table-head">

@@ -69,7 +69,10 @@ export function RefundPosture() {
       error={errMsg}
     >
       {isEmpty ? (
-        <div className="panel-empty">No refunds in this slice.</div>
+        <div className="panel-empty">
+          No refunds in this slice.{' '}
+          <span className="panel-empty-hint">A clean window — or widen the date range to see longer-tail refunds.</span>
+        </div>
       ) : (
         <>
           <div className="refund-posture-grid">

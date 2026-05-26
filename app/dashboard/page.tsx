@@ -15,6 +15,7 @@ import { DataFreshness } from '@/components/DataFreshness';
 import { SectionNav } from '@/components/SectionNav';
 import { FilterDigest } from '@/components/FilterDigest';
 import { WhatChanged } from '@/components/panels/WhatChanged';
+import { DashboardFooter } from '@/components/DashboardFooter';
 
 export const dynamic = 'force-dynamic';
 
@@ -81,6 +82,8 @@ export default function Dashboard() {
       <div id="sec-capabilities" className="dash-section">
         <CapabilityMatrix />
       </div>
+
+      <DashboardFooter />
     </main>
   );
 }

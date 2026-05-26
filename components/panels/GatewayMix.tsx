@@ -60,7 +60,10 @@ export function GatewayMix() {
       error={errMsg}
     >
       {isEmpty ? (
-        <div className="panel-empty">No transactions in this slice.</div>
+        <div className="panel-empty">
+          No transactions in this slice.{' '}
+          <span className="panel-empty-hint">Try widening the date range or clearing a filter.</span>
+        </div>
       ) : (
         <div style={{ width: '100%', height: 280 }}>
           <ResponsiveContainer>

@@ -77,7 +77,10 @@ export function OfflineMopMix() {
       error={errMsg}
     >
       {isEmpty ? (
-        <div className="panel-empty">No offline transactions in the selected window.</div>
+        <div className="panel-empty">
+          No offline transactions in the selected window.{' '}
+          <span className="panel-empty-hint">Try a longer date range — offline volume is lighter day-to-day.</span>
+        </div>
       ) : (
         <div style={{ width: '100%', height: 280 }}>
           <ResponsiveContainer>

@@ -246,8 +246,15 @@ function Delta({
       ? 'good'
       : 'bad';
 
+  // Glyph carries the sentiment without relying on colour — readable on a printed
+  // B&W deck and accessible for colour-blind viewers. The arrow shows direction;
+  // the icon shows whether direction is good or bad in context.
+  const icon =
+    sentiment === 'good' ? '✓' : sentiment === 'bad' ? '✗' : '·';
+
   return (
     <div className={`metric-sub metric-delta ${sentiment}`}>
+      <span className="metric-delta-icon" aria-hidden>{icon}</span>{' '}
       {arrow} {formatted} vs {prevRangeLabel} ({fmtVal(previous)})
     </div>
   );

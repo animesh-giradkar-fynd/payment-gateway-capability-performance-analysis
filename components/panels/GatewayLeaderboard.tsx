@@ -80,7 +80,10 @@ export function GatewayLeaderboard() {
       error={errMsg}
     >
       {isEmpty ? (
-        <div className="panel-empty">No gateways in this slice.</div>
+        <div className="panel-empty">
+          No gateways match the current filters.{' '}
+          <span className="panel-empty-hint">Widen the date range or clear a filter chip above.</span>
+        </div>
       ) : (
         <>
           <div style={{ width: '100%', height: 360 }}>

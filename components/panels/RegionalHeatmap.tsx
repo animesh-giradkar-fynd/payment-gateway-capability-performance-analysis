@@ -149,7 +149,10 @@ export function RegionalHeatmap() {
       error={errMsg}
     >
       {isEmpty ? (
-        <div className="panel-empty">No geo-located orders in the selected window.</div>
+        <div className="panel-empty">
+          No geo-located orders in the selected window.{' '}
+          <span className="panel-empty-hint">Try widening the date range — coverage is best at 30 days or more.</span>
+        </div>
       ) : (
         <>
           {/* Metric switcher — pick which payment method shades the map */}
